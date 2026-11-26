@@ -141,7 +141,7 @@ public func normaliseTitle(_ title: String) -> String {
 }
 
 /// JavaScript's `\s` and `trim()`: Unicode white space and line ends, and the BOM.
-private let jsWhitespace: CharacterSet = {
+let jsWhitespace: CharacterSet = {
     var set = CharacterSet.whitespacesAndNewlines
     set.insert(charactersIn: "\u{FEFF}")
     return set

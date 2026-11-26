@@ -33,6 +33,7 @@ import eventLabelsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTes
 import autoCategorizeFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/autoCategorize.json?raw";
 import tripLegBookFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/tripLegBook.json?raw";
 import primeDatesFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/primeDates.json?raw";
+import tripsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/trips.json?raw";
 import zoneFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/zone.json?raw";
 
 import { availabilityCases } from "./availability.cases";
@@ -61,6 +62,7 @@ import { eventLabelsCases } from "./eventLabels.cases";
 import { autoCategorizeCases } from "./autoCategorize.cases";
 import { tripLegBookCases } from "./tripLegBook.cases";
 import { primeDatesCases } from "./primeDates.cases";
+import { tripsCases } from "./trips.cases";
 
 const FIXTURES = "ios/Packages/CasyCore/Tests/CasyCoreTests/Parity";
 
@@ -95,6 +97,7 @@ describe.each([
   ["autoCategorize", autoCategorizeCases(), autoCategorizeFixture],
   ["tripLegBook", tripLegBookCases(), tripLegBookFixture],
   ["primeDates", primeDatesCases(), primeDatesFixture],
+  ["trips", tripsCases(), tripsFixture],
 ] as const)("%s", (module, cases, fixture) => {
   it.runIf(import.meta.env.UPDATE_PARITY)("writes the fixtures", async () => {
     // Named through a variable so the type check doesn't look for Node's types.

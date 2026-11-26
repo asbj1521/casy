@@ -54,7 +54,7 @@ public func legKey(_ calendarId: String, _ title: String, _ location: String) ->
 }
 
 /// An event's title, place and key when the labels call it a journey; never Casy's own trip entry.
-private func travelOf(_ e: PhoneEventWithDetails, _ labels: LabelBook) -> (title: String, location: String, key: String)? {
+func travelOf(_ e: PhoneEventWithDetails, _ labels: LabelBook) -> (title: String, location: String, key: String)? {
     guard let title = e.title?.trimmingCharacters(in: .whitespacesAndNewlines), !title.isEmpty, !isCasyTripEntry(e),
         let label = labels[labelKey(e.calendarId, title)], travelKinds.contains(label.label.kind)
     else { return nil }

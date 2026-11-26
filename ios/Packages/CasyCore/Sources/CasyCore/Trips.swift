@@ -1,6 +1,6 @@
 // Trips (#115) as the trip sheet shows them (#200): trips.ts's legs, trips and
 // questions, tripView.ts's marks and city names, and the days a question offers.
-// Finding them stays the page's until the home page's background work is native.
+// Finding them is TripDetection.swift's (#202).
 
 import Foundation
 
@@ -103,13 +103,19 @@ public struct TripMark: Codable, Sendable, Equatable, Identifiable {
     public var start: Int64
     public var end: Int64
     public var city: String
+    /// A question's journeys themselves, which its guessing bar grows from.
+    public var legsStart: Int64?
+    public var legsEnd: Int64?
 
     /// The journeys it is about.
     public var legs: [Leg] { trip?.legs ?? question?.legs ?? [] }
 
     public init(
-        kind: String, id: String, trip: Trip?, question: TripQuestion?, start: Int64, end: Int64, city: String
+        kind: String, id: String, trip: Trip?, question: TripQuestion?, start: Int64, end: Int64, city: String,
+        legsStart: Int64? = nil, legsEnd: Int64? = nil
     ) {
+        self.legsStart = legsStart
+        self.legsEnd = legsEnd
         self.kind = kind
         self.id = id
         self.trip = trip

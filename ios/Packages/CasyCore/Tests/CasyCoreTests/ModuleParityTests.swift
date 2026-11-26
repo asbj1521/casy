@@ -948,3 +948,48 @@ private struct CalendarKind: Decodable {
         }
     }
 }
+
+@Test func tripsGiveTheTypeScriptAnswers() throws {
+    let words = TripBarWords(pending: { "P:\($0)" }, accepted: { "A:\($0)" }, back: { "R:\($0)" }, outbound: { "O:\($0)" })
+    try check("trips", atLeast: 700) { fn, a in
+        switch fn {
+        case "cityKey":
+            return .string(cityKey(try text(a, "name")))
+        case "homeOf":
+            return homeOf(try a["legs"].decoded(), try a["answers"].decoded()).map { .string($0) } ?? .null
+        case "detectTrips":
+            return try json(
+                detectTrips(
+                    try a["legs"].decoded(), try a["answers"].decoded(), now: try milliseconds(a, "now"),
+                    inCalendar: try a["inCalendar"].decoded()))
+        case "tripMarks":
+            let lang: Lang = try text(a, "lang") == "en" ? .en : .da
+            return try json(tripMarks(try a["detected"].decoded(), lang))
+        case "tripBars":
+            let step: Int = try a["step"].decoded()
+            return try json(tripBars(try a["marks"].decoded(), words, step: step))
+        case "withoutTripsInCalendar":
+            let items: [ItemSpan] = try a["items"].decoded()
+            let monthItems = items.map { MonthItem(calendarId: $0.calendarId, start: $0.start, end: $0.end, label: "") }
+            return try json(withoutTripsInCalendar(try a["marks"].decoded(), items: monthItems))
+        case "markOn":
+            return markOn(try a["marks"].decoded(), day: try milliseconds(a, "day")).map { .string($0.id) } ?? .null
+        case "revealDay":
+            return revealDay(try a["marks"].decoded()).map { .number(Double($0)) } ?? .null
+        case "phoneLegs":
+            return try json(
+                phoneLegs(
+                    try a["events"].decoded(), try a["labels"].decoded(), try a["book"].decoded(), try a["names"].decoded(),
+                    try a["answers"].decoded()))
+        case "casyTripSpans":
+            return try json(casyTripSpans(try a["events"].decoded()))
+        default: return unknown(fn)
+        }
+    }
+}
+
+private struct ItemSpan: Decodable {
+    var calendarId: String
+    var start: Int64
+    var end: Int64
+}
