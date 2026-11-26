@@ -793,7 +793,21 @@ private struct DayColumn: View {
     /// dashed orange border, rounded 5, the orange at 10 %, 6 at the sides; its
     /// title 13 bold on an 18 line, from two lines the time, 12, in orange);
     /// anything else (a trip) tinted as a block.
-    private func extra(_ item: MonthItem, height: CGFloat) -> some View {
+    @ViewBuilder private func extra(_ item: MonthItem, height: CGFloat) -> some View {
+        if item.pencil == true {
+            pencilled(item, height: height)
+        } else {
+            // An agreed date (or a trip): drawn as any event of the day, in its own colour,
+            // its bar at the left, its time under its name.
+            block(
+                item.label,
+                time: height >= DayHours.twoLines
+                    ? "\(formatTime(isoString(item.start)))-\(formatTime(isoString(item.end)))" : nil,
+                rgb: HomeModel.shared.color(item.calendarId))
+        }
+    }
+
+    private func pencilled(_ item: MonthItem, height: CGFloat) -> some View {
         let shape = RoundedRectangle(cornerRadius: 5)
         let rgb = HomeModel.shared.color(item.calendarId)
         let pencil = item.pencil == true
