@@ -110,8 +110,10 @@ final class ContactInviter: NSObject {
 
 extension ContactInviter: CNContactPickerDelegate {
     nonisolated func contactPicker(_ picker: CNContactPickerViewController, didSelect contacts: [CNContact]) {
+        // A CNContact is immutable and thread-safe (Apple's documentation).
+        nonisolated(unsafe) let picked = contacts
         MainActor.assumeIsolated {
-            picking?.resume(returning: contacts)
+            picking?.resume(returning: picked)
             picking = nil
         }
     }

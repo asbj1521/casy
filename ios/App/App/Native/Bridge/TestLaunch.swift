@@ -16,7 +16,8 @@
     /// screens, and `-casyPhoneSync <synced|denied>` answers for the page when
     /// it is asked to send the phone's calendars.
     enum TestLaunch {
-        private static let defaults = UserDefaults.standard
+        // UserDefaults is safe from any thread (Apple's documentation).
+        nonisolated(unsafe) private static let defaults = UserDefaults.standard
 
         static var backend: URL? {
             defaults.string(forKey: "casyBackend").flatMap(URL.init(string:))

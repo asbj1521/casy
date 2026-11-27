@@ -1455,7 +1455,7 @@ private struct SharedCard: View, Animatable {
     let room: CGFloat
     var grown: Double
 
-    var animatableData: Double {
+    nonisolated var animatableData: Double {
         get { grown }
         set { grown = newValue }
     }
@@ -1738,7 +1738,7 @@ private struct TossPose: ViewModifier, Animatable {
     var press: Double
     let anchor: UnitPoint
 
-    var animatableData: AnimatablePair<Double, Double> {
+    nonisolated var animatableData: AnimatablePair<Double, Double> {
         get { AnimatablePair(flight, press) }
         set {
             flight = newValue.first
@@ -1833,7 +1833,7 @@ struct PileMonth: View {
         .frame(width: width)
     }
 
-    static func weeks(_ month: Int64, _ items: [MonthItem]) -> [HomeWeek] {
+    nonisolated static func weeks(_ month: Int64, _ items: [MonthItem]) -> [HomeWeek] {
         let local = localDate(month, appTimeZone)
         let layout = monthLayout(local.year, local.month, appTimeZone)
         return layout.weeks.enumerated().map { w, week in

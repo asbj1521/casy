@@ -1021,7 +1021,7 @@ struct WelcomeTravelBox: View {
 /// The drop's wave over the screen, `time` seconds after the hit; off before and after.
 private struct Rippling: ViewModifier, Animatable {
     var time: Double
-    var animatableData: Double {
+    nonisolated var animatableData: Double {
         get { time }
         set { time = newValue }
     }
@@ -1040,7 +1040,7 @@ private struct Rippling: ViewModifier, Animatable {
 /// A move worked out each frame, so everything under it moves as one.
 private struct Shift: ViewModifier, Animatable {
     var y: CGFloat
-    var animatableData: CGFloat {
+    nonisolated var animatableData: CGFloat {
         get { y }
         set { y = newValue }
     }
@@ -1055,7 +1055,7 @@ private struct FlightAlong: ViewModifier, Animatable {
     let ballSize: CGFloat
     let day: CGFloat
 
-    var animatableData: Double {
+    nonisolated var animatableData: Double {
         get { progress }
         set { progress = newValue }
     }
@@ -1121,7 +1121,7 @@ private struct Burst: View {
 /// Lets the burst's clock animate (the bits read `t` each frame).
 private struct BurstClock: ViewModifier, Animatable {
     var t: Double
-    var animatableData: Double {
+    nonisolated var animatableData: Double {
         get { t }
         set { t = newValue }
     }

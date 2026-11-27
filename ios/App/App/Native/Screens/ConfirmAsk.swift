@@ -111,7 +111,7 @@ extension View {
     /// The web's ConfirmPanel on a phone, about one thing (`presenting`):
     /// while `isPresented`, ConfirmAsk asks what `words` says and runs `action`
     /// on yes.
-    func askFirst<T>(
+    func askFirst<T: Sendable>(
         isPresented: Binding<Bool>, presenting: T?, words: @escaping (T) -> AskWords,
         action: @escaping (T) async throws -> Void
     ) -> some View {

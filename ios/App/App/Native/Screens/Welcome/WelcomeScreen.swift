@@ -211,7 +211,7 @@ private struct IconIntoPhone: View, Animatable {
     let to: CGRect
     var progress: Double
 
-    var animatableData: Double {
+    nonisolated var animatableData: Double {
         get { progress }
         set { progress = newValue }
     }

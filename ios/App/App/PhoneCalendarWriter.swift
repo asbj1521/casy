@@ -96,12 +96,14 @@ enum PhoneCalendarWriter {
         case badTime
     }
 
-    private static let isoWithFraction: ISO8601DateFormatter = {
+    // ISO8601DateFormatter is thread-safe (Apple's documentation).
+
+    nonisolated(unsafe) private static let isoWithFraction: ISO8601DateFormatter = {
         let format = ISO8601DateFormatter()
         format.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return format
     }()
-    private static let iso = ISO8601DateFormatter()
+    nonisolated(unsafe) private static let iso = ISO8601DateFormatter()
 
     private static func instant(_ text: Any?) -> Date? {
         guard let text = text as? String else { return nil }

@@ -105,7 +105,7 @@ final class HomeModel {
     }
 
     /// The window searched, as the web's SEARCH_WINDOW: this month and eleven more.
-    static let monthCount = 12
+    nonisolated static let monthCount = 12
 
     /// Your own calendar's items, before the page's are added.
     private var own: [MonthItem] = []

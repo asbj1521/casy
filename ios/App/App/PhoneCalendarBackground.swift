@@ -104,7 +104,9 @@ enum PhoneCalendarBackground {
         schedule()
         let work = Task { await send() }
         task.expirationHandler = { work.cancel() }
-        Task { task.setTaskCompleted(success: await work.value) }
+        // iOS's handle may be told it is done from any thread.
+        nonisolated(unsafe) let refresh = task
+        Task { refresh.setTaskCompleted(success: await work.value) }
     }
 
     /// Read and send, then carry out the calendar work the server has for
@@ -190,7 +192,9 @@ enum PhoneBusy {
         return calendar
     }()
 
-    private static let iso: ISO8601DateFormatter = {
+    // ISO8601DateFormatter is thread-safe (Apple's documentation).
+
+    nonisolated(unsafe) private static let iso: ISO8601DateFormatter = {
         let format = ISO8601DateFormatter()
         format.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return format

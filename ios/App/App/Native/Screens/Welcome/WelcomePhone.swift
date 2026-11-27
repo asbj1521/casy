@@ -103,7 +103,7 @@ private struct Growing: ViewModifier, Animatable {
     var progress: CGFloat
     let from: CGRect
 
-    var animatableData: CGFloat {
+    nonisolated var animatableData: CGFloat {
         get { progress }
         set { progress = newValue }
     }
@@ -466,7 +466,7 @@ private struct ThrownPaper<Content: View>: View {
 /// The paper's corners and shadow, from a thrown sheet's to the screen's.
 private struct PaperEdge: ViewModifier, Animatable {
     var settle: Double
-    var animatableData: Double {
+    nonisolated var animatableData: Double {
         get { settle }
         set { settle = newValue }
     }
@@ -486,7 +486,7 @@ private struct ThrowPose: ViewModifier, Animatable {
     var flight: Double
     var settle: Double
 
-    var animatableData: AnimatablePair<Double, Double> {
+    nonisolated var animatableData: AnimatablePair<Double, Double> {
         get { AnimatablePair(flight, settle) }
         set {
             flight = newValue.first

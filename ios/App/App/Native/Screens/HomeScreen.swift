@@ -312,7 +312,15 @@ struct HomeScreen: View {
         let day = toolbarDay && shownDay != nil
         let month = shownDay.map { capitalize(monthName($0, lang)) } ?? ""
         return HStack(alignment: .top) {
-            Button(action: day ? (deck != nil ? voteToMonth : closeDay) : { model.press("calendars", nil) }) {
+            Button {
+                if !day {
+                    model.press("calendars", nil)
+                } else if deck != nil {
+                    voteToMonth()
+                } else {
+                    closeDay()
+                }
+            } label: {
                 // Both words always laid out, one faded in (0.18 s, the web's
                 // crossfade); the capsule's width morphs from one to the other.
                 ZStack(alignment: .leading) {
@@ -792,7 +800,7 @@ private struct MonthList: View, Equatable {
     /// A month's weeks reaching the header (true) or leaving it, or no longer drawn (false).
     let reach: (Int64, Bool) -> Void
 
-    static func == (a: MonthList, b: MonthList) -> Bool {
+    nonisolated static func == (a: MonthList, b: MonthList) -> Bool {
         a.months == b.months && a.column == b.column && a.today == b.today && a.starred == b.starred
             && a.lang == b.lang && a.dark == b.dark && a.headerHeight == b.headerHeight
     }
@@ -877,7 +885,7 @@ private struct MonthBlock: View, Equatable {
     let color: (String) -> String
     let pick: (Int64, CGRect?) -> Void
 
-    static func == (a: MonthBlock, b: MonthBlock) -> Bool {
+    nonisolated static func == (a: MonthBlock, b: MonthBlock) -> Bool {
         a.month == b.month && a.column == b.column && a.today == b.today && a.starred == b.starred
             && a.lang == b.lang && a.dark == b.dark
     }
