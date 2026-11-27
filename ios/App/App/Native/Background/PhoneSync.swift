@@ -64,6 +64,19 @@ final class PhoneSyncWork {
     /// This phone's connection for the signed-in person, if it is connected.
     var thisPhone: String? { userId.flatMap { UserDefaults.standard.string(forKey: Self.connectionKey($0)) } }
 
+    /// The page's phone id and connection kept where the app has none yet, before
+    /// anyone signs in (PageCarryOver, #202): signing in then finds them.
+    static func adopt(userId: String?, device: String?, connection: String?) {
+        if UserDefaults.standard.string(forKey: deviceKey) == nil, let device, !device.isEmpty {
+            UserDefaults.standard.set(device, forKey: deviceKey)
+        }
+        if let userId, UserDefaults.standard.string(forKey: connectionKey(userId)) == nil, let connection,
+            !connection.isEmpty
+        {
+            UserDefaults.standard.set(connection, forKey: connectionKey(userId))
+        }
+    }
+
     /// Signed in (or out): the page's phone id and connection taken over where the
     /// app has none yet, then a send, as the page did on opening.
     func signedIn(_ userId: String?, pageDevice: String?, pageConnection: String?) {

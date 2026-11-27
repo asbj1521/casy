@@ -141,15 +141,24 @@ final class AppSession {
             MainActor.assumeIsolated { AppSession.shared.schedule() }
         }
         #if DEBUG
-            // `-casyForgetLogin YES`: a test starts with no login of the app's own.
-            if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyForgetLogin") { SessionKeychain.delete() }
+            // `-casyForgetLogin YES`: a test starts with no login of the app's own, the page not yet looked at.
+            if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyForgetLogin") {
+                SessionKeychain.delete()
+                UserDefaults.standard.removeObject(forKey: Self.pageLookedKey)
+            }
         #endif
         if let kept = SessionKeychain.load() {
             adopt(kept)
             return
         }
+        // The page looked at once: whatever it had is the app's since.
+        guard !UserDefaults.standard.bool(forKey: Self.pageLookedKey) else { return changed(nil) }
         Task {
-            if let json = await PageLogin.take(), takeOver(pageJSON: json) {
+            guard let stored = await PageLogin.take() else { return changed(nil) }
+            UserDefaults.standard.set(true, forKey: Self.pageLookedKey)
+            // What the page kept goes first, so the login's arrival finds it (the phone's connection).
+            PageCarryOver.adopt(stored.values, userId: stored.login.flatMap(Self.userId(inPageJSON:)))
+            if let json = stored.login, takeOver(pageJSON: json) {
                 #if DEBUG
                     NSLog("AppSession: the page's login taken over")
                 #endif
@@ -259,6 +268,16 @@ final class AppSession {
     }
 
     // MARK: The page's login, handed over and back
+
+    /// Set once the page's storage has been read at launch (PageLogin).
+    static let pageLookedKey = "casy.pageLooked"
+
+    private static func userId(inPageJSON json: String) -> String? {
+        guard let data = json.data(using: .utf8),
+            let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        return (object["user"] as? [String: Any])?["id"] as? String
+    }
 
     /// The page's stored login, as auth-js keeps it, made the app's.
     func takeOver(pageJSON: String) -> Bool {

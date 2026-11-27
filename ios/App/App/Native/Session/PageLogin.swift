@@ -1,22 +1,32 @@
 import Foundation
 import WebKit
 
-/// The page's login, taken over by the app (#202). auth-js kept it in the web
-/// view's storage, which belongs to the page's address (`capacitor://localhost`,
+/// What the page kept on this phone, taken over by the app (#202): the login
+/// above all, and what else the app keeps now (PageCarryOver). It is in the
+/// web view's storage, which belongs to the page's address (`capacitor://localhost`,
 /// Capacitor's), not to Capacitor itself: a hidden web view opens a blank page
-/// at that address, reads the login and removes it, so the page could never
-/// refresh it too (a refresh token works once). Needs no page and no Capacitor,
-/// so it still works in the app that has neither.
+/// at that address and reads it all. The login is removed as it is read, so
+/// the page could never refresh it too (a refresh token works once). Needs no
+/// page and no Capacitor, so it still works in the app that has neither.
 @MainActor
 final class PageLogin: NSObject {
     /// The page's address, as Capacitor serves it.
     private static let origin = URL(string: "capacitor://localhost/")!
 
-    /// The login JSON as auth-js stored it, gone from the page's storage; nil when there is none.
-    static func take() async -> String? {
+    /// What the page stored: its login (auth-js's JSON, now gone from the page) and everything else.
+    struct Stored {
+        var login: String?
+        var values: [String: String]
+    }
+
+    /// The page's storage; nil when it couldn't be opened.
+    static func take() async -> Stored? {
         guard let key = storageKey else { return nil }
         let reader = PageLogin()
-        return await reader.read(key)
+        guard let all = await reader.read(key) else { return nil }
+        var values = all
+        let login = values.removeValue(forKey: key)
+        return Stored(login: login, values: values)
     }
 
     /// The page's key; in a UI test, that of the fake backend's web build.
@@ -32,7 +42,7 @@ final class PageLogin: NSObject {
     private var webView: WKWebView?
     private var loaded: CheckedContinuation<Bool, Never>?
 
-    private func read(_ key: String) async -> String? {
+    private func read(_ key: String) async -> [String: String]? {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
         configuration.setURLSchemeHandler(BlankPage(), forURLScheme: Self.origin.scheme!)
@@ -53,9 +63,19 @@ final class PageLogin: NSObject {
             }
         }
         guard opened else { return nil }
-        let script = "const v = localStorage.getItem(key); if (v !== null) localStorage.removeItem(key); return v;"
+        // Every value but the remembered queries (casy:query:, large and fetched again anyway).
+        let script = """
+            const all = {};
+            for (let i = 0; i < localStorage.length; i++) {
+              const name = localStorage.key(i);
+              if (name && !name.startsWith("casy:query:")) all[name] = localStorage.getItem(name);
+            }
+            localStorage.removeItem(key);
+            return all;
+            """
         let value = try? await view.callAsyncJavaScript(script, arguments: ["key": key], contentWorld: .page)
-        return value as? String
+        guard let object = value as? [String: Any] else { return nil }
+        return object.compactMapValues { $0 as? String }
     }
 
     private func finish(_ opened: Bool) {

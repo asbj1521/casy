@@ -36,6 +36,10 @@ final class PageLoginUITests: XCTestCase {
         app = launch(["-casy.pageFree", "YES", "-casyForgetLogin", "YES"])
         let welcome = app.descendants(matching: .any)["welcome.screen"]
         XCTAssertFalse(welcome.waitForExistence(timeout: 8), "signed in with the page's login")
+        // And what the page kept with it: this phone's calendar connection, not asked for again.
+        let carried = app.staticTexts["home.lastAction"]
+        XCTAssertTrue(carried.waitForExistence(timeout: 10))
+        XCTAssertEqual(carried.label, "carried phone conn-apple")
         app.terminate()
 
         // 3. The app's login forgotten again: the page's was removed as it was taken.
