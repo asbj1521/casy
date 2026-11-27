@@ -44,13 +44,12 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # Capacitor's Swift packages are read from node_modules.
+      # For the UI tests' fake backend (Node).
       - run: npm ci
-      # The site the app packages (ios/App/App/public, not in git), copied in
-      # with cap sync, which also writes CapApp-SPM's Package.swift.
-      - run: npm run build
-      - run: npx cap sync ios
-      # Xcode 26 at the least: Swift tools 6.2 (CapApp-SPM, CasyUI), the iOS 26
+      # The app has no page (#202): it is built from Swift alone, plus the
+      # project's address, here empty (no .env.local on CI; nothing talks to it).
+      - run: bash scripts/native/project-endpoint.sh
+      # Xcode 26 at the least: Swift tools 6.2 (CasyUI), the iOS 26
       # SDK and the project's Xcode 16 format. The newest 26 or later installed.
       - name: Pick Xcode 26 or later
         run: |
