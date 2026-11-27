@@ -19,9 +19,6 @@ final class GroupsModel {
     var failure: String?
     /// People from groups since gone (#222), offered in Invitér too.
     private(set) var friends: [Friend] = []
-    /// Tells the page someone was invited to a group in a way the server
-    /// can't tell it (a link, a text, an email), for its home page's nudge.
-    var onInviteSent: ((String) -> Void)?
 
     func reset() {
         groups = nil
@@ -79,7 +76,6 @@ final class GroupsModel {
             ? try await api.deleteGroup(group.id, errorMessage: message)
             : try await api.leaveGroup(group.id, errorMessage: message)
         groups = answer.groups ?? groups?.filter { $0.id != group.id }
-        changed()
     }
 
     /// Everyone you could invite to `groupId`: your groups' members and your
@@ -112,8 +108,6 @@ final class GroupsModel {
         let api = try await signedIn(CasyStrings.inviteSendFailed)
         groups = try await api.inviteMembers(
             groupId, profileIds: profileIds, emails: emails, errorMessage: CasyStrings.inviteSendFailed)
-        inviteSent(groupId)
-        changed()
     }
 
     /// A fresh link: only a fingerprint is stored, so one can't be shown again.
@@ -121,8 +115,6 @@ final class GroupsModel {
         let api = try await signedIn(CasyStrings.inviteLinkFailed)
         return try await api.makeInviteLink(groupId, errorMessage: CasyStrings.inviteLinkFailed)
     }
-
-    func inviteSent(_ groupId: String) { onInviteSent?(groupId) }
 
     /// A link anyone can open to become your friend (#226).
     func makeFriendLink() async throws -> InviteLink {
@@ -134,7 +126,6 @@ final class GroupsModel {
     func removeFriend(_ profileId: String) async throws {
         let api = try await signedIn(CasyStrings.friendsFailed)
         friends = try await api.removeFriend(profileId, errorMessage: CasyStrings.friendsFailed)
-        changed()
     }
 
     /// A new group with you in it, then its picture, which needs the group to
@@ -147,12 +138,10 @@ final class GroupsModel {
             name: name, description: description.isEmpty ? nil : description,
             errorMessage: CasyStrings.newGroupFailed)
         groups = made.groups
-        changed()
         guard let picture else { return (made.createdId, false) }
         do {
             _ = try await api.setGroupPicture(made.createdId, picture)
             await load()
-            changed()
             return (made.createdId, false)
         } catch {
             return (made.createdId, true)
@@ -169,7 +158,6 @@ final class GroupsModel {
     func setPrimeDates(_ group: CasyAPI.Group, on: Bool) async throws {
         let api = try await signedIn(CasyStrings.groupPrimeFailed)
         groups = try await api.setPrimeDates(group.id, on: on, errorMessage: CasyStrings.groupPrimeFailed)
-        changed()
     }
 
     /// Rediger gruppe's Gem: only what changed, one call each, as the web.
@@ -180,7 +168,6 @@ final class GroupsModel {
         defer {
             Task {
                 await load()
-                changed()
             }
         }
         let api = try await signedIn(CasyStrings.groupRenameFailed)
@@ -210,7 +197,6 @@ final class GroupsModel {
         try await api.report(target, reason: reason, note: note, errorMessage: CasyStrings.reportFailed)
         if let member {
             _ = try await api.blockPerson(member, errorMessage: CasyStrings.invitationsBlockFailed)
-            changed()
         }
         if let group { try await remove(group, forAll: false) }
     }
@@ -223,7 +209,6 @@ final class GroupsModel {
                 invitation.groupId, errorMessage: CasyStrings.invitationsAnswerFailed)
             if let joined = answer.groups { groups = joined }
             setInvitations(answer.invitations ?? invitationsWithout(invitation))
-            changed()
         } catch {
             await load()  // gone meanwhile (deleted, say): the fresh list drops it
             throw error
@@ -236,7 +221,6 @@ final class GroupsModel {
             setInvitations(
                 try await api.declineInvitation(
                     invitation.groupId, errorMessage: CasyStrings.invitationsAnswerFailed))
-            changed()
         } catch {
             await load()
             throw error
@@ -249,7 +233,6 @@ final class GroupsModel {
         let answer = try await api.blockInvitationSender(
             invitation.groupId, errorMessage: CasyStrings.invitationsBlockFailed)
         setInvitations(answer.invitations ?? invitationsWithout(invitation))
-        changed()
     }
 
     /// The client, or the screen's own words when the page hasn't lent a login.
@@ -267,7 +250,6 @@ final class GroupsModel {
         ProfileModel.shared.invitations = list.count
     }
 
-    private func changed() { ProfileModel.shared.onChange?() }
 }
 
 /// What Rediger gruppe does with the picture: leaves it, sets a new one, or takes it away.

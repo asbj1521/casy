@@ -40,7 +40,6 @@ final class AdminModel {
             patch(&now)
             overview = now
         }
-        ProfileModel.shared.onChange?()
         Task { await load() }
     }
 

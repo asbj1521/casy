@@ -82,7 +82,6 @@ final class EventsModel {
     func cancel(_ id: String) async throws {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsCancelFailed) }
         show(try await api.cancelEvent(id, errorMessage: CasyStrings.eventsCancelFailed))
-        ProfileModel.shared.onChange?()
         LivePulse.shared.touched()
     }
 
@@ -93,7 +92,6 @@ final class EventsModel {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsAnswerFailed) }
         let answer = try await api.answerDate(id, dateId: dateId, response: response, errorMessage: CasyStrings.eventsAnswerFailed)
         show(answer.events)
-        ProfileModel.shared.onChange?()
         LivePulse.shared.touched()
         return answer.outcome
     }
@@ -108,7 +106,6 @@ final class EventsModel {
             }
             let events = try await api.addToMyCalendar(id, errorMessage: CasyStrings.addToCalendarFailed)
             show(events)
-            ProfileModel.shared.onChange?()
         LivePulse.shared.touched()
             let mine = events.first { $0.id == id }?.myCalendar
             if mine?.state == "adding", mine?.onPhone == true, let writeOnPhone {
@@ -126,14 +123,12 @@ final class EventsModel {
     func change(_ failure: String, _ action: (EdgeFunctions) async throws -> [SuggestedEvent]) async throws {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: failure) }
         show(try await action(api))
-        ProfileModel.shared.onChange?()
         LivePulse.shared.touched()
     }
 
     func leave(_ id: String) async throws {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.eventsLeaveFailed) }
         show(try await api.leaveEvent(id, errorMessage: CasyStrings.eventsLeaveFailed))
-        ProfileModel.shared.onChange?()
         LivePulse.shared.touched()
     }
 }

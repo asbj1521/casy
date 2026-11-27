@@ -4,14 +4,9 @@ import Foundation
 import Security
 import UIKit
 
-/// The app without its page (#202): a Debug switch (Admin, "Uden side") under
-/// which the web view loads nothing and the app owns the login itself. It is
-/// how the page's last jobs are found and moved before the page goes for good.
-///
-/// One owner at a time: Supabase rotates refresh tokens, so a page and the app
-/// refreshing the same login would sign the person out. Switching on, the page
-/// hands its login over and forgets it (`handOver`); switching off, the app's
-/// goes back into the page's storage before the page's first line runs.
+/// The app without its page (#202): it owns the login itself. Someone signed
+/// in on the page before has it taken over once (PageLogin), and the page's
+/// copy removed, so the two never refresh it both (a refresh token works once).
 enum PageFree {
     private static let key = "casy.pageFree"
 

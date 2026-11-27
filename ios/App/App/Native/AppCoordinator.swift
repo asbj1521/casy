@@ -1009,7 +1009,6 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
                 Task { @MainActor in _ = await AppSession.shared.refresh() }
             }
         }
-        PageAuth.shared.send = nil
         AppSession.shared.changed = { [weak self] session in
             guard let self else { return }
             let connection = session.flatMap { s in

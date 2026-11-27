@@ -22,8 +22,6 @@ final class TripsWork {
     private(set) var events: [PhoneEventWithDetails] = []
     private(set) var names: [String: String] = [:]
     private(set) var labels: LabelBook = [:]
-    /// Tells the page the legs changed (its copy, which it pairs into trips).
-    var mirror: (_ userId: String, _ book: LegBook) -> Void = { _, _ in }
 
     private var userId: String?
     private var asked: Set<String> = []
@@ -51,7 +49,6 @@ final class TripsWork {
         Self.write(userId, kept)
         if userId == self.userId {
             book = kept
-            mirror(userId, book)
             HomeTrips.shared.refresh()
         }
     }
@@ -62,7 +59,6 @@ final class TripsWork {
         asked = []
         book = [:]
         Self.write(userId, book)
-        mirror(userId, book)
         HomeTrips.shared.refresh()
         LabelsWork.shared.kick()
     }
@@ -121,7 +117,6 @@ final class TripsWork {
         guard let userId, next != book else { return }
         book = next
         Self.write(userId, book)
-        mirror(userId, book)
         HomeTrips.shared.refresh()
     }
 

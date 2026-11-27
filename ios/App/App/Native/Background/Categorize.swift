@@ -19,7 +19,6 @@ final class CategorizeWork {
     static var on: Bool { AppCoordinator.nativeLabels }
 
     /// Told when calendars got a category, for what shows them to read again.
-    var changed: () -> Void = {}
 
     private var asked: Set<String> = []
     private var userId: String?
@@ -87,6 +86,5 @@ final class CategorizeWork {
         guard let categorized = try? await api.categorizeCalendars(titles: titles, accountKinds: kinds),
             !categorized.isEmpty
         else { return }
-        changed()
     }
 }

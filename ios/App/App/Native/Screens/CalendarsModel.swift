@@ -17,11 +17,9 @@ struct PhoneSyncOutcome {
 
 /// Your calendars (#200), shared by Kalendere, Forbundne kalendere and the
 /// tour: the list as calendar-busy gives it over the months searched, the
-/// accounts as calendar-status does, and the primary calendar. What the page
+/// accounts as calendar-status does, and the primary calendar. What the app
 /// keeps on this phone (the holidays' tick, the calendars the tour has been
-/// through, this phone's own connection) comes with the sheet's opening and
-/// goes back as it changes; every change to your calendars is told to the
-/// page (`onChanged`), which fetches its own copies again.
+/// through, this phone's own connection) comes with the sheet's opening.
 @MainActor @Observable
 final class CalendarsModel {
     static let shared = CalendarsModel()
@@ -47,10 +45,9 @@ final class CalendarsModel {
     /// A provider picked before arriving (`?connect=apple`): its form opens once.
     private var connectOnce: String?
 
-    /// The bridge's: tell the page a choice it keeps, that the calendars changed,
-    /// ask it to send the phone's calendars, and that this phone was removed.
+    /// The coordinator's: the tour's calendars kept, the phone's calendars sent,
+    /// and this phone's connection forgotten.
     var onPrefs: ((_ holidaysHidden: Bool?, _ tourSeen: [String]?) -> Void)?
-    var onChanged: (() -> Void)?
     var syncPhone: ((_ create: Bool) async -> PhoneSyncOutcome)?
     var onPhoneForgotten: (() -> Void)?
 
@@ -212,7 +209,6 @@ final class CalendarsModel {
     /// After anything that changed your calendars: the list here, and the page's.
     func settled() async {
         await load()
-        onChanged?()
     }
 
     /// The tour has been through one: Kalendere stops counting it.
@@ -281,12 +277,10 @@ final class CalendarsModel {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.addToCalendarSetPrimaryFailed) }
         primary = try await api.setPrimaryCalendar(calendarId, errorMessage: CasyStrings.addToCalendarSetPrimaryFailed)
         primaryKnown = true
-        onChanged?()
     }
 
     func setAutoAdd(_ on: Bool) async throws {
         guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.primaryAutoAddFailed) }
         primary = try await api.setAutoAdd(on, errorMessage: CasyStrings.primaryAutoAddFailed)
-        onChanged?()
     }
 }

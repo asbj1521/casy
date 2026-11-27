@@ -49,8 +49,6 @@ final class LabelsWork {
     var thisPhone: String? {
         didSet { if thisPhone != oldValue { kick() } }
     }
-    /// Tells the page the book changed (its copy, for what it still draws).
-    var mirror: (_ userId: String, _ book: LabelBook) -> Void = { _, _ in }
 
     private var userId: String?
     /// Titles asked about since the app was opened: each at most once a launch.
@@ -105,7 +103,6 @@ final class LabelsWork {
             book = kept.labels
             corrections = kept.corrections
             refreshImportant(events: nil)
-            mirror(userId, book)
             kick()
         }
     }
@@ -242,7 +239,6 @@ final class LabelsWork {
         guard let userId, next != book else { return }
         book = next
         Self.write(userId, Kept(labels: book, corrections: corrections))
-        mirror(userId, book)
     }
 
     /// The labelled events that matter, from the phone's events as they are now.

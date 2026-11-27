@@ -21,7 +21,6 @@ final class ProfileModel {
 
     /// Tells the web view that your name or picture changed, so its own
     /// copies (the groups and events lists) are fetched again.
-    var onChange: (() -> Void)?
 
     func reset() {
         whoAmI = nil
@@ -62,7 +61,6 @@ final class ProfileModel {
                     name, errorMessage: CasyStrings.profileSetNameFailed)
                 whoAmI?.name = saved
                 whoAmI?.unnamed = false
-                onChange?()
             } catch {
                 failure = error.localizedDescription
             }
@@ -96,7 +94,6 @@ extension ProfileModel {
             do {
                 guard let api = await Native.api() else { return }
                 whoAmI?.avatarUrl = try await send(api)
-                onChange?()
             } catch {
                 failure = error.localizedDescription
             }

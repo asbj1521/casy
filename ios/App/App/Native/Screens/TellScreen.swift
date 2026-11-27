@@ -220,7 +220,6 @@ struct TellScreen: View {
             do {
                 guard let api = await Native.api() else { throw APIError.failed(status: 401, message: CasyStrings.tellSaveFailed) }
                 let saved = try await api.saveEntries(entries, errorMessage: CasyStrings.tellSaveFailed)
-                calendars.onChanged?()
                 // The month glides to the first day added, to show it landed.
                 let first = saved.map(\.start).min() ?? entries.map(\.start).min()
                 if let first { leave(.added(first)) } else { closeSheet() }

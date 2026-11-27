@@ -21,10 +21,10 @@ final class MyDataModel {
     private(set) var exporting = false
     var failure: String?
 
-    /// Tells the page a yes or a no to the AI was saved: a no deletes the
-    /// labels and trips it keeps on the phone (afterAiConsent on the web).
+    /// A yes or a no to the AI saved: a no deletes the labels and trips the
+    /// app keeps on the phone (afterAiConsent on the web).
     var onAiConsent: ((Bool) -> Void)?
-    /// Asks the page how many labels it keeps on the phone.
+    /// How many labels the app keeps on the phone.
     var askLabels: (() async -> Int)?
 
     func reset() {
@@ -103,7 +103,6 @@ final class MyDataModel {
         do {
             let api = try await signedIn()
             blocked = try await api.unblock(profileId, errorMessage: CasyStrings.invitationsBlockFailed)
-            ProfileModel.shared.onChange?()
         } catch {
             failure = error.localizedDescription
         }

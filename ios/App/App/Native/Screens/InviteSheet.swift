@@ -127,7 +127,6 @@ final class InviteModel {
 
     /// The link was copied, shared or its QR code shown: someone is probably being invited.
     func linkUsed() {
-        if let groupId { groups.inviteSent(groupId) }
     }
 
     /// Contacts picked, the link made here if there is none yet, and Messages

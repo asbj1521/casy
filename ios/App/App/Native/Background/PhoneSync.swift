@@ -23,11 +23,6 @@ final class PhoneSyncWork {
 
     static var on: Bool { AppCoordinator.nativeLabels }
 
-    /// Tells the page this phone's connection for someone (nil: none any more).
-    var connection: (_ userId: String, _ connectionId: String?) -> Void = { _, _ in }
-    /// Tells the page and the native screens Casy's calendars changed.
-    var changed: () -> Void = {}
-
     private var userId: String?
     private var lastSent: Date = .distantPast
     private var settle: Task<Void, Never>?
@@ -96,7 +91,6 @@ final class PhoneSyncWork {
         guard let userId else { return }
         UserDefaults.standard.set(connectionId, forKey: Self.connectionKey(userId))
         LabelsWork.shared.thisPhone = connectionId
-        connection(userId, connectionId)
     }
 
     /// This phone's connection removed (Kalendere): nothing is sent any more, the background either.
@@ -191,7 +185,6 @@ final class PhoneSyncWork {
                 token: token)
             if saved { PhoneCalendarBackground.schedule() }
         }
-        changed()
         CategorizeWork.shared.kick()
         LabelsWork.shared.kick()
         // Agreed events for a primary calendar on this phone (#105): never at the cost of the send.
@@ -209,7 +202,7 @@ final class PhoneSyncWork {
         if tasks.isEmpty && check.isEmpty { return }
         let reports = PhoneCalendarWriter.apply(store: store, tasks: tasks, check: check)
         guard !reports.isEmpty, let sent = JSONValue(any: reports) else { return }
-        if (try? await api.reportPhoneWrites(deviceId: deviceId, reports: sent)) != nil { changed() }
+        _ = try? await api.reportPhoneWrites(deviceId: deviceId, reports: sent)
     }
 }
 

@@ -17,20 +17,12 @@ struct AuthAnswer: Sendable {
     static func failed(_ error: String) -> AuthAnswer { AuthAnswer(outcome: "failed", error: error) }
 }
 
-/// Signing in through the page (#282): the session still lives there until
-/// Phase 6, so each step (a password, a new account, an email link, Apple) is
-/// sent to it as `authAsk`, done by the same Supabase calls its own sign-in
-/// makes, and answered (`authAnswered`) with the outcome and its own words.
+/// Each sign-in step (a password, a new account, an email link, Apple) done
+/// by the app itself (#202, AppAuth), answered with the outcome and its own
+/// words. Once the page's (hence the name).
 @MainActor
 final class PageAuth {
     static let shared = PageAuth()
-
-    /// Sends an ask to the page; set by the bridge.
-    var send: (([String: Any]) -> Void)?
-    private var waiting: [Int: CheckedContinuation<AuthAnswer, Never>] = [:]
-    private var asked = 0
-    /// Apple's own sheet is in it, so a person may take a while.
-    private static let patience: Duration = .seconds(180)
 
     func ask(
         _ action: String, email: String = "", password: String = "", name: String = "", code: String = ""
@@ -42,25 +34,7 @@ final class PageAuth {
                 return TestLaunch.authAnswer(action, email: email, password: password, code: code)
             }
         #endif
-        // Without its page the app signs in itself (#202).
-        if PageFree.on {
-            return await AppAuth.shared.answer(action, email: email, password: password, name: name, code: code)
-        }
-        guard let send else { return .failed(CasyStrings.signIn("appleFailed")) }
-        asked += 1
-        let id = asked
-        return await withCheckedContinuation { continuation in
-            waiting[id] = continuation
-            send(["id": id, "action": action, "email": email, "password": password, "name": name, "code": code])
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: Self.patience)
-                self?.answered(id, AuthAnswer.failed(CasyStrings.groupsLoadFailed))
-            }
-        }
-    }
-
-    func answered(_ id: Int, _ answer: AuthAnswer) {
-        waiting.removeValue(forKey: id)?.resume(returning: answer)
+        return await AppAuth.shared.answer(action, email: email, password: password, name: name, code: code)
     }
 }
 
