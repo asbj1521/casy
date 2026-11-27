@@ -132,8 +132,19 @@ describe("the association file", () => {
     expect(detail.appIDs).toEqual([`${team}.${bundle}`]);
   });
 
-  it("lists only the invite links and /app, which is all appLinkPath opens", () => {
-    expect(detail.components.map((c) => c["/"])).toEqual(["/join/*", "/friend/*", "/app"]);
+  it("lists only what the app opens: the invite links, /app, and auth emails' links", () => {
+    expect(detail.components.map((c) => c["/"])).toEqual([
+      "/join/*",
+      "/friend/*",
+      "/app",
+      "/sign-in",
+    ]);
+  });
+
+  it("claims /sign-in only with an auth email's token, never the page itself (#202)", () => {
+    const signIn = detail.components.find((c) => c["/"] === "/sign-in") as
+      { "?"?: Record<string, string> } | undefined;
+    expect(signIn?.["?"]).toEqual({ token_hash: "*" });
   });
 
   it("opens /app, the computer's QR code, on the app's home page (#270)", () => {
