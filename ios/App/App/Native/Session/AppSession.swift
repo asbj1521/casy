@@ -29,6 +29,14 @@ enum PageFree {
     static let handBackKey = "casy.pageFree.handBack"
 }
 
+/// Without the page and signed out (#202): an invite's or a friend link's
+/// screen opened by the bridge over the welcome; false when it isn't one, or
+/// the welcome isn't up (signed in, or the login not yet read).
+@MainActor
+enum PageFreeLinks {
+    static var openSignedOut: ((String) -> Bool)?
+}
+
 /// Admin's switch reaches the bridge through this (set as it loads).
 @MainActor
 enum PageFreeSwitch {
@@ -145,6 +153,10 @@ final class AppSession {
             if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyForgetLogin") {
                 SessionKeychain.delete()
                 UserDefaults.standard.removeObject(forKey: Self.pageLookedKey)
+            }
+            // `-casyPageLooked YES`: what other tests left in the page's storage is not taken.
+            if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyPageLooked") {
+                UserDefaults.standard.set(true, forKey: Self.pageLookedKey)
             }
         #endif
         if let kept = SessionKeychain.load() {

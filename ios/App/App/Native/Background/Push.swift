@@ -40,6 +40,12 @@ final class PushWork: NSObject {
     private var userId: String?
     private var homeSettled = false
     private var waitingPath: String?
+
+    /// The address waiting for the home page, taken (signed out, it never comes).
+    func takeWaiting() -> String? {
+        defer { waitingPath = nil }
+        return waitingPath
+    }
     private var tokenWaiter: CheckedContinuation<String?, Never>?
     private var observers: [NSObjectProtocol] = []
 
@@ -189,6 +195,8 @@ final class PushWork: NSObject {
             NSLog("PushWork: tap to %@", path)
         #endif
         if openHere(path) { return tested(path, "opened") }
+        // Without the page, signed out: an invite's own screen over the welcome (#202).
+        if PageFreeLinks.openSignedOut?(path) == true { return tested(path, "opened signed out") }
         if NativeHome.on && !homeSettled {
             waitingPath = path
             return

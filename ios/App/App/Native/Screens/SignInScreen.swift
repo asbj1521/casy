@@ -35,15 +35,15 @@ final class PageAuth {
     func ask(
         _ action: String, email: String = "", password: String = "", name: String = "", code: String = ""
     ) async -> AuthAnswer {
+        // Without its page the app signs in itself (#202), in a test too (against the fake backend).
+        if PageFree.on {
+            return await AppAuth.shared.answer(action, email: email, password: password, name: name, code: code)
+        }
         #if DEBUG
             if TestLaunch.isActive && !TestLaunch.pageAuth {
                 return TestLaunch.authAnswer(action, email: email, password: password, code: code)
             }
         #endif
-        // Without its page the app signs in itself (#202).
-        if PageFree.on {
-            return await AppAuth.shared.answer(action, email: email, password: password, name: name, code: code)
-        }
         guard let send else { return .failed(CasyStrings.signIn("appleFailed")) }
         asked += 1
         let id = asked

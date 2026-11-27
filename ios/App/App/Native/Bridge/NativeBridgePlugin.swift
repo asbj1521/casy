@@ -515,11 +515,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     preferences: NativePreferences.shared, token: state["token"] as? String ?? state["start"] as? String ?? "",
                     signedIn: state["signedIn"] as? Bool ?? Self.testSignedIn, autoJoin: state["autoJoin"] as? Bool == true,
                     onChoose: onChoose,
-                    finish: { [weak self] outcome in
+                    finish: { [weak self, state] outcome in
                         switch outcome {
                         case .joined: self?.dismissOpenScreen(["joined": true])
                         case .group(let id): self?.dismissOpenScreen(["group": id])
-                        case .signUp: self?.dismissOpenScreen(["signUp": true])
+                        case .signUp:
+                            let token = state["token"] as? String ?? state["start"] as? String ?? ""
+                            self?.dismissOpenScreen(["signUp": true, "path": "/join/\(token)"])
                         case .home: self?.dismissOpenScreen(["next": "/"])
                         }
                     }))
@@ -529,10 +531,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     preferences: NativePreferences.shared, token: state["token"] as? String ?? state["start"] as? String ?? "",
                     signedIn: state["signedIn"] as? Bool ?? Self.testSignedIn, autoAdd: state["autoAdd"] as? Bool == true,
                     onChoose: onChoose,
-                    finish: { [weak self] outcome in
+                    finish: { [weak self, state] outcome in
                         switch outcome {
                         case .added: self?.dismissOpenScreen(["friendAdded": true])
-                        case .signUp: self?.dismissOpenScreen(["signUp": true])
+                        case .signUp:
+                            let token = state["token"] as? String ?? state["start"] as? String ?? ""
+                            self?.dismissOpenScreen(["signUp": true, "path": "/friend/\(token)"])
                         case .home: self?.dismissOpenScreen(["next": "/"])
                         }
                     }))
@@ -1207,6 +1211,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         } else {
             notifyListeners("closed", data: then.merging(["screen": screen]) { $1 })
         }
+        // Without the page, signed out: whatever closed, the welcome is what is left.
+        if PageFree.on, welcomeUp {
+            DispatchQueue.main.async {
+                if self.openScreen == nil, self.welcomeUp { self.showPageFree(signedIn: false) }
+            }
+        }
     }
 
     // MARK: The app's own routing (#202)
@@ -1442,6 +1452,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// What a sheet closed with that the page would have done, done by the app;
     /// what it can't do yet is logged, the page's last jobs found that way.
     private func pageFreeLeave(_ then: [String: Any]) {
+        #if DEBUG
+            NSLog("PageFree: closed with %@ (invite waiting: %@)", "\(then)", pendingInvite ?? "none")
+        #endif
+        // Bliv medlem signed out: the account first, the invite kept for after (the web's `?join=1`).
+        if then["signUp"] as? Bool == true, let path = then["path"] as? String,
+            let presenter = bridge?.viewController
+        {
+            pendingInvite = path
+            openedHere = true
+            present("signIn", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: ["signup": true])
+            return
+        }
+        if let next = then["next"] as? String, openInviteWithoutPage(next) { return }
         if then["signOut"] as? Bool == true {
             Task { _ = await AppSession.shared.signOut() }
         } else if then["accountDeleted"] as? Bool == true {
@@ -1451,7 +1474,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         } else if then["sent"] != nil {
             Asks.shared.push("sent")
         } else if then["signedIn"] as? Bool == true {
-            // AppSession has it already.
+            // AppSession has it already; an invite said yes to before the account, carried out now.
+            if let invite = pendingInvite {
+                pendingInvite = nil
+                _ = openInviteWithoutPage(invite, auto: true)
+            }
         } else {
             NSLog("PageFree: the page would have done %@", "\(then)")
         }
@@ -1492,6 +1519,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self.showPageFree(signedIn: connection != nil)
             }
         }
+        PageFreeLinks.openSignedOut = { [weak self] path in
+            guard let self, self.welcomeUp else { return false }
+            return self.openInviteWithoutPage(path)
+        }
         AppSession.shared.start()
         UpdateCheck.shared.show = { [weak self] store in self?.showUpdate(store) }
         UpdateCheck.shared.start()
@@ -1516,6 +1547,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// Signed in, the app's home page; signed out, the welcome over everything.
     @MainActor private func showPageFree(signedIn: Bool) {
+        #if DEBUG
+            NSLog("PageFree: signed %@, %@ open", signedIn ? "in" : "out", openScreen ?? "nothing")
+        #endif
+        welcomeUp = !signedIn
         var page = HomeModel.shared.page
         page.shown = signedIn
         page.covered = false
@@ -1523,12 +1558,57 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         placeHome()
         guard let presenter = bridge?.viewController else { return }
         if !signedIn {
-            if openScreen == nil {
-                present("welcome", on: presenter, build: pageBuild, userAgent: pageUserAgent)
-            }
-        } else if openScreen == "welcome" || openScreen == "signIn" {
-            dismissOpenScreen()
+            guard openScreen == nil else { return }
+            // A link that came before the login was read: its screen instead of the welcome.
+            if let waiting = PushWork.shared.takeWaiting(), openInviteWithoutPage(waiting) { return }
+            present("welcome", on: presenter, build: pageBuild, userAgent: pageUserAgent)
+        } else if openScreen == "welcome" || openScreen == "signIn",
+            presenter.presentedViewController?.isBeingDismissed != true
+        {
+            // Signed in from it (Apple's sheet, or the sign-in screen's own close not yet sent):
+            // closed as signed in, so an invite said yes to before is carried out.
+            dismissOpenScreen(["signedIn": true])
         }
+    }
+
+    /// Without the page, signed out: the welcome is (or will be) what is under everything.
+    private var welcomeUp = false
+    /// Without the page: an invite or friend link said yes to before there was an account.
+    private var pendingInvite: String?
+
+    /// Without the page: an invite's or a friend link's own screen, as the
+    /// signed-in or signed-out person sees it; `auto` carries out the yes said
+    /// before making the account. False for any other address.
+    @MainActor private func openInviteWithoutPage(_ path: String, auto: Bool = false) -> Bool {
+        guard PageFree.on, let route = appRoute(path), let presenter = bridge?.viewController else { return false }
+        let signedIn = AppSession.shared.session != nil
+        let screen: String
+        let state: [String: Any]
+        switch route {
+        case .join(let token): (screen, state) = ("join", ["token": token, "signedIn": signedIn, "autoJoin": auto])
+        case .friend(let token): (screen, state) = ("friend", ["token": token, "signedIn": signedIn, "autoAdd": auto])
+        default: return false
+        }
+        #if DEBUG
+            NSLog("PageFree: %@ opened, signed %@", path, signedIn ? "in" : "out")
+        #endif
+        let show = { [weak self] in
+            guard let self else { return }
+            self.openedHere = true
+            self.present(screen, on: presenter, build: self.pageBuild, userAgent: self.pageUserAgent, state: state)
+        }
+        if let shown = presenter.presentedViewController {
+            // The welcome (or sign-in) steps aside; it comes back when the invite closes signed out.
+            // Nothing named open: the welcome left behind its paste sheet (closing a screen that
+            // shows a sheet closes only the sheet).
+            guard openScreen == nil || openScreen == "welcome" || openScreen == "signIn" else { return false }
+            openScreen = nil
+            openedHere = false
+            shown.dismiss(animated: false, completion: show)
+        } else {
+            show()
+        }
+        return true
     }
 
     // MARK: Handing the login between the page and the app (#202, Debug)

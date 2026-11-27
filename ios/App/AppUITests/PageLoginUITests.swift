@@ -58,4 +58,36 @@ final class PageLoginUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["update.screen"].waitForExistence(timeout: 20))
         app.terminate()
     }
+
+    /// Signed out, an invite said yes to before there is an account (the web's
+    /// `?join=1`): the account first, then the invite joins by itself.
+    @MainActor func testAnInviteSaidYesToBeforeTheAccountJoinsAfterSigningIn() {
+        let app = launch([
+            "-casy.pageFree", "YES", "-casyForgetLogin", "YES", "-casyPageLooked", "YES",
+            "-casyCopied", "Kom med: https://casy.app/join/abc123",
+        ])
+        let paste = app.buttons["welcome.paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 45), "signed out: the welcome")
+        paste.tap()
+        let go = app.buttons["invitePaste.go"]
+        XCTAssertTrue(go.waitForExistence(timeout: 10))
+        go.tap()
+        let answer = app.buttons["join.answer"]
+        XCTAssertTrue(answer.waitForExistence(timeout: 20), "the invite, signed out")
+        XCTAssertTrue(app.staticTexts["Sommerhuset"].exists || app.descendants(matching: .any)["join.screen"].exists)
+        answer.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["signin.screen"].waitForExistence(timeout: 10), "an account first")
+        app.buttons["signin.tab.signIn"].tap()
+        for (id, text) in [("signin.email", "mia@eksempel.dk"), ("signin.password", "hemmelig12")] {
+            let field = app.descendants(matching: .any)[id].firstMatch
+            XCTAssertTrue(field.waitForExistence(timeout: 5), id)
+            field.tap()
+            field.typeText(text)
+        }
+        app.buttons["signin.submit"].tap()
+        // Back on the invite, joining by itself (too quick to catch under test), then home (the fake backend's join adds no group to look for).
+        XCTAssertTrue(app.staticTexts["home.title"].waitForExistence(timeout: 20), "home, signed in")
+        XCTAssertFalse(app.descendants(matching: .any)["join.screen"].exists, "joined, the invite gone")
+        XCTAssertFalse(app.descendants(matching: .any)["welcome.screen"].exists)
+    }
 }

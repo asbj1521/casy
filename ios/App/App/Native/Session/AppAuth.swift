@@ -32,7 +32,7 @@ final class AppAuth: NSObject {
                 // A password chosen before today's rules is flagged, as the web's sign-in does.
                 if weak {
                     WeakPassword.shared.flag()
-                } else {
+                } else if !Self.underTest {
                     Task { if let times = await Self.timesLeaked(password), times > 0 { WeakPassword.shared.flag() } }
                 }
                 return AuthAnswer(outcome: "in")
@@ -101,6 +101,15 @@ final class AppAuth: NSObject {
         } catch {
             return .failed(action.hasPrefix("apple") || action == "linkApple" ? CasyStrings.signIn("appleFailed") : error.localizedDescription)
         }
+    }
+
+    /// A UI test asks no outside service (the leak check).
+    private static var underTest: Bool {
+        #if DEBUG
+            return TestLaunch.isActive
+        #else
+            return false
+        #endif
     }
 
     /// The web's authErrorMessage: the errors people run into, in their language; anything else as Supabase said it.
