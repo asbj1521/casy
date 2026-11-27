@@ -13,7 +13,7 @@ final class HomeStars {
     static let shared = HomeStars()
 
     /// Found here, not by the page: as the rest of the app's own background work.
-    static var on: Bool { NativeBridgePlugin.nativeLabels }
+    static var on: Bool { AppCoordinator.nativeLabels }
 
     /// The stars, best first; empty until worked out.
     private(set) var stars: [PrimeDate] = []

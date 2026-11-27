@@ -24,7 +24,7 @@ final class PushWork: NSObject {
         #if DEBUG
             if TestLaunch.isActive { return TestLaunch.push }
         #endif
-        return NativeBridgePlugin.nativeLabels
+        return AppCoordinator.nativeLabels
     }
 
     /// The bridge's: the app's own screen for an address; false when it can't show it now.

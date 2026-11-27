@@ -23,7 +23,7 @@ final class Asks {
             // Under a UI test, only when it asks for it (`-casyAsks YES`), from a clean slate.
             if TestLaunch.isActive { return TestLaunch.asks }
         #endif
-        return NativeBridgePlugin.nativeLabels
+        return AppCoordinator.nativeLabels
     }
 
     /// Every count forgotten: a UI test starts from a phone that was never asked.

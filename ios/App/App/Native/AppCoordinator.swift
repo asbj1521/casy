@@ -1,51 +1,22 @@
-import Capacitor
 import CasyCore
 import CasyUI
 import SwiftUI
 import UIKit
 
-/// The bridge between the web view and the app's native screens (#192, #198).
-///
-/// Until the home page is native (Phase 6), the web view keeps the login, the
-/// address and the cached data, and native screens borrow what they need:
-/// `setSession`, `setPreferences`, `screens` (which screens this build draws),
-/// `open`. Back to the web: `preferences` when a native screen changed a
-/// choice, `closed` when one closes (with where to go next, if anywhere), `dataChanged` when one changed what the page has cached, `inviteSent` when someone was invited to a group, `needSession` for a fresh login, `needPhoneWrite` to write the phone's calendar.
-/// Kalendere (#200) opens with what the page keeps on this phone (`open`'s
-/// `state`), and answers with `calendarPrefs` when it changes one,
-/// `calendarsChanged`, `needPhoneSync` to send the phone's calendars (answered
-/// by `phoneSynced`) and `phoneForgotten` when this phone's connection went.
-public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
-    UIAdaptivePresentationControllerDelegate
-{
-    public let identifier = "NativeBridgePlugin"
-    public let jsName = "NativeBridge"
-    public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "screens", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setSession", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setPreferences", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "open", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "pushResult", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "phoneFacts", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "phoneWritten", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "phoneSynced", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "authAnswered", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "openPath", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "askPush", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "forgetPush", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "enablePushInApp", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "asksFromPage", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "labelsFromPage", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "legsFromPage", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "labelCorrected", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "clearPhoneAi", returnType: CAPPluginReturnPromise),
-    ]
+/// The app's screens and what happens between them (#192, #198, #202): the
+/// home page placed under everything, the sheets presented over it and what
+/// each asks for as it closes, the app's own routing for a notification's or a
+/// link's address, the login passed on to every part of the app, and the
+/// welcome when signed out. Once the bridge to the web view (hence its old
+/// name's file); the app has no page any more.
+@MainActor
+final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
+    static let shared = AppCoordinator()
 
-    /// The screens drawn natively in this build. None in a Release build: the
-    /// Swift rewrite reaches people all at once, as its own update, so until
-    /// then App Store releases carry only the web's screens and its fixes.
+    /// The app's root screen: everything is placed in it or presented over it.
+    private(set) weak var root: UIViewController?
+
+    /// The screens this app draws: all of them, but in a test that keeps one away.
     private static let nativeScreens: [String] = {
         #if DEBUG
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
@@ -56,8 +27,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks", "notifications"] : [])
     }()
 
-    /// The background work this build does natively, named in `screens` too so
-    /// the page leaves it: the event labels and the day facts made of them
+    /// The background work the app does: the event labels and the day facts made of them
     /// (#282, LabelsWork), the calendars sorted by AI (CategorizeWork) and the
     /// trips' legs read from the labelled journeys (TripsWork), and the phone's
     /// calendars sent with the calendar work after (PhoneSyncWork). Not in a UI
@@ -88,115 +58,63 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return false
         #endif
     }
-    /// A native screen waiting for the web view to turn notifications on.
-    private var pushAnswer: CheckedContinuation<String, Never>?
-    /// Native Dine data waiting for the page to count what it keeps on the phone.
-    private var factsAnswer: CheckedContinuation<Int, Never>?
-    /// Which question `factsAnswer` waits on, so a late timeout can't end a newer one.
-    private var factsAsked = 0
-    /// A native screen waiting for the page to write the phone's calendar.
-    private var writeAnswer: CheckedContinuation<Void, Never>?
-    private var writesAsked = 0
-    /// Native Kalendere waiting for the page to send the phone's calendars.
-    private var syncAnswer: CheckedContinuation<PhoneSyncOutcome, Never>?
-    private var syncsAsked = 0
-
-    override public func load() {
-        let askWeb: @Sendable () -> Void = { [weak self] in
-            self?.notifyListeners("needSession", data: [:])
-        }
-        Task { await SessionBox.shared.setAskWeb(askWeb) }
-        Task { @MainActor [weak self] in
-            ProfileModel.shared.onChange = { [weak self] in
-                self?.notifyListeners("dataChanged", data: [:])
+    /// Wired up as the root screen first appears: every model's hooks, then the
+    /// login, the welcome or the home page.
+    func start(root: UIViewController) {
+        guard self.root == nil else { return }
+        self.root = root
+        do {
+            // A no to the AI: the labels and trips it made on this phone go too (#120).
+            MyDataModel.shared.onAiConsent = { on in
+                guard !on else { return }
+                Task { @MainActor in
+                    if let id = await SessionBox.shared.current()?.userId { LabelsWork.shared.clear(id) }
+                }
             }
-            GroupsModel.shared.onInviteSent = { [weak self] groupId in
-                self?.notifyListeners("inviteSent", data: ["groupId": groupId])
-            }
-            MyDataModel.shared.onAiConsent = { [weak self] on in
-                self?.notifyListeners("aiConsent", data: ["on": on])
-            }
-            MyDataModel.shared.askLabels = { [weak self] in
-                if LabelsWork.on { return LabelsWork.shared.count }
-                return await self?.askLabels() ?? 0
-            }
-            // Sorted calendars: the page's cached ones read again, as when a screen changed them.
-            CategorizeWork.shared.changed = { [weak self] in
-                self?.notifyListeners("calendarsChanged", data: [:])
-            }
-            TripsWork.shared.mirror = { [weak self] userId, legs in
-                guard let data = try? JSONEncoder().encode(legs),
-                    let object = try? JSONSerialization.jsonObject(with: data)
-                else { return }
-                self?.notifyListeners("legs", data: ["userId": userId, "legs": object])
-            }
-            LabelsWork.shared.mirror = { [weak self] userId, book in
-                guard let data = try? JSONEncoder().encode(book),
-                    let labels = try? JSONSerialization.jsonObject(with: data)
-                else { return }
-                self?.notifyListeners("labels", data: ["userId": userId, "labels": labels])
-            }
+            MyDataModel.shared.askLabels = { LabelsWork.on ? LabelsWork.shared.count : 0 }
             EventsModel.shared.writeOnPhone = { [weak self] in
                 await self?.writeOnPhone()
             }
             let calendars = CalendarsModel.shared
-            calendars.onPrefs = { [weak self] hidden, seen in
-                var data: [String: Any] = [:]
-                if let hidden { data["holidaysHidden"] = hidden }
-                if let seen {
-                    data["tourSeen"] = seen
-                    HomeModel.shared.rememberTourSeen(seen)
-                }
-                self?.notifyListeners("calendarPrefs", data: data)
+            calendars.onPrefs = { _, seen in
+                if let seen { HomeModel.shared.rememberTourSeen(seen) }
             }
-            calendars.onChanged = { [weak self] in
-                self?.notifyListeners("calendarsChanged", data: [:])
-            }
-            calendars.syncPhone = { [weak self] create in
-                // The app sends the phone's calendars itself where it does (#282).
+            calendars.syncPhone = { create in
                 if PhoneSyncWork.on { return await PhoneSyncWork.shared.sync(create: create) }
-                return await self?.syncPhone(create: create)
-                    ?? PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed)
+                #if DEBUG
+                    // A test launch without the phone's work: its made-up answer.
+                    if TestLaunch.isActive {
+                        return TestLaunch.phoneSync == "denied"
+                            ? PhoneSyncOutcome(state: "denied")
+                            : PhoneSyncOutcome(state: "synced", calendars: 2, busyBlocks: 5, connectionId: "c-phone")
+                    }
+                #endif
+                return PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed)
             }
-            calendars.onPhoneForgotten = { [weak self] in
+            calendars.onPhoneForgotten = {
                 if PhoneSyncWork.on { PhoneSyncWork.shared.forget() }
-                self?.notifyListeners("phoneForgotten", data: [:])
             }
-            PhoneSyncWork.shared.connection = { [weak self] userId, connectionId in
-                var data: [String: Any] = ["userId": userId]
-                if let connectionId { data["connectionId"] = connectionId }
-                self?.notifyListeners("phoneConnection", data: data)
-            }
-            PhoneSyncWork.shared.changed = { [weak self] in
-                self?.notifyListeners("calendarsChanged", data: [:])
-            }
-            TripModel.shared.onAction = { [weak self] action in
+            TripModel.shared.onAction = { action in
                 #if DEBUG
                     if TestLaunch.isActive && !HomeTrips.on { return TestLaunch.answer(action) }
                 #endif
-                // Found by the app itself (#202): answered here; else the page's.
-                if HomeTrips.on { return HomeTrips.shared.act(action) }
-                self?.notifyListeners("tripAction", data: Self.tripAction(action))
+                if HomeTrips.on { HomeTrips.shared.act(action) }
             }
-            PageAuth.shared.send = { [weak self] ask in self?.notifyListeners("authAsk", data: ask) }
             // A trip waiting for an answer, tapped on the home month: its sheet.
             HomeModel.shared.openTrip = { [weak self] mark in
-                guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil,
+                guard let self, let presenter = self.root, self.openScreen == nil,
                     let data = try? JSONEncoder().encode(mark), let object = try? JSONSerialization.jsonObject(with: data)
                 else { return }
-                self.openedHere = true
                 self.present("trip", on: presenter, state: ["mark": object])
             }
             // An agreed date's chip in the day view: Aftaler, opened on its event.
             HomeModel.shared.openEvent = { [weak self] id in
-                guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil else { return }
-                self.openedHere = true
+                guard let self, let presenter = self.root, self.openScreen == nil else { return }
                 self.present("events", on: presenter, state: ["vote": id])
             }
             // The notifications' sheet when the app decides it is time (#202).
             Asks.shared.showPushAsk = { [weak self] reason in
-                guard let self, let presenter = self.bridge?.viewController, self.openScreen == nil else { return false }
-                self.openedHere = true
+                guard let self, let presenter = self.root, self.openScreen == nil else { return false }
                 self.present("push", on: presenter, state: ["reason": reason])
                 return true
             }
@@ -208,50 +126,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
             // Notifications are the app's own (#202): a tap opens its screen here when it can.
             PushWork.shared.openHere = { [weak self] path in self?.open(path: path) ?? false }
-            PushWork.shared.openOnPage = { [weak self] path in
-                self?.notifyListeners("openPage", data: ["path": path])
-            }
-            // After every plugin has loaded: the push plugin takes the taps as it loads.
             PushWork.shared.takeTaps()
             // The home page's buttons open the app's own sheets (#202): the page isn't asked.
             HomeModel.shared.route = { [weak self] action, day in
                 self?.route(action, day) ?? false
             }
-            HomeModel.shared.onAction = { [weak self] action, day in
-                // Planlæg pressed: the page counts it as over the month before it asks for
-                // the app's own sheet, and its own home page (on this month) flickered in.
-                if action == "plan" { self?.planComing() }
-                var data: [String: Any] = ["action": action]
-                if let day { data["day"] = Double(day) }
-                // A star the app found: the stretch goes with it, for its sheet (the page's to open).
-                if action == "prime", let day, let star = HomeStars.shared.star(on: day),
-                    let encoded = try? JSONEncoder().encode(star),
-                    let object = try? JSONSerialization.jsonObject(with: encoded)
-                {
-                    data["prime"] = object
-                }
-                self?.notifyListeners("homeAction", data: data)
-            }
-            NotificationCenter.default.addObserver(
-                forName: NativeHome.switched, object: nil, queue: .main
-            ) { [weak self] _ in
-                MainActor.assumeIsolated { self?.placeHome() }
-            }
         }
-        // Without its page (#202): once the controller is on screen, the app's own login and home.
-        if PageFree.on {
-            Task { @MainActor [weak self] in
-                while self?.bridge?.viewController?.view.window == nil { try? await Task.sleep(for: .milliseconds(50)) }
-                self?.startPageFree()
-            }
-        }
+        startPageFree()
         #if DEBUG
             startTestLaunch()
         #endif
-    }
-
-    @objc func screens(_ call: CAPPluginCall) {
-        call.resolve(["screens": Self.nativeScreens])
     }
 
     #if DEBUG
@@ -292,7 +176,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     let model = HomeModel.shared
                     // The test plays the page: a press the app doesn't answer itself goes nowhere.
                     model.onAction = { _, _ in }
-                    while bridge?.viewController?.view.window == nil {
+                    while root?.view.window == nil {
                         try? await Task.sleep(for: .milliseconds(100))
                     }
                     // A notification's tap that launched the app (#202): it waits for the home page.
@@ -307,46 +191,13 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 // Web only (#280): the page opens its own screen (`-casyWebPath`).
                 guard !TestLaunch.webOnly, let screen = TestLaunch.screen else { return }
                 // The web view's own controller has to be on screen first.
-                while bridge?.viewController?.view.window == nil {
+                while root?.view.window == nil {
                     try? await Task.sleep(for: .milliseconds(100))
                 }
-                if let presenter = bridge?.viewController { present(screen, on: presenter) }
+                if let presenter = root { present(screen, on: presenter) }
             }
         }
     #endif
-
-    /// `{ projectUrl, apiKey, session: { accessToken, expiresAt (epoch s), userId } | null }`.
-    @objc func setSession(_ call: CAPPluginCall) {
-        #if DEBUG
-            if TestLaunch.isActive { return call.resolve() }
-        #endif
-        var next: SessionBox.Connection?
-        if let url = call.getString("projectUrl").flatMap(URL.init(string:)), let apiKey = call.getString("apiKey") {
-            Task { await SessionBox.shared.setEndpoint(url, apiKey: apiKey) }
-        }
-        if let session = call.getObject("session"),
-            let url = call.getString("projectUrl").flatMap(URL.init(string:)),
-            let apiKey = call.getString("apiKey"),
-            let token = session["accessToken"] as? String,
-            let expiresAt = session["expiresAt"] as? Double,
-            let userId = session["userId"] as? String
-        {
-            next = SessionBox.Connection(
-                projectURL: url, apiKey: apiKey, accessToken: token,
-                expiresAt: Date(timeIntervalSince1970: expiresAt), userId: userId,
-                email: session["email"] as? String)
-        }
-        let phone = call.getString("phoneConnection")
-        let device = call.getString("deviceId")
-        if let url = call.getString("projectUrl").flatMap(URL.init(string:)), let apiKey = call.getString("apiKey") {
-            // Kept for the app without its page (#202), which signs in by itself.
-            ProjectEndpoint.remember(url, apiKey: apiKey)
-        }
-        Task {
-            await apply(next, phone: phone, device: device)
-            call.resolve()
-        }
-    }
 
     /// A login (or none) passed on to every part of the app: the page's
     /// (`setSession`) or, without the page, the app's own (`AppSession`).
@@ -383,52 +234,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// `{ lang, theme }`: what the web view uses now.
-    @objc func setPreferences(_ call: CAPPluginCall) {
-        #if DEBUG
-            if TestLaunch.isActive { return call.resolve() }
-        #endif
-        let lang = call.getString("lang")
-        let theme = call.getString("theme")
-        DispatchQueue.main.async {
-            let preferences = NativePreferences.shared
-            if let lang { preferences.lang = lang }
-            if let theme { preferences.theme = theme }
-            self.placeHome()
-            call.resolve()
-        }
-    }
-
-    /// `{ screen, build, userAgent }`: a native screen as a sheet over the page.
-    /// The last two are what Send feedback reports, as the page knows them.
-    @objc func open(_ call: CAPPluginCall) {
-        let screen = call.getString("screen") ?? ""
-        let build = call.getString("build") ?? "dev"
-        let userAgent = call.getString("userAgent") ?? ""
-        let state = call.getObject("state") ?? [:]
-        guard Self.nativeScreens.contains(screen) else {
-            call.reject("No native screen \(screen)")
-            return
-        }
-        #if DEBUG
-            // Under a home test the test plays a signed-in page, as in `setHome`; the
-            // real page under it is signed out and would cover the home with the welcome.
-            if TestLaunch.isActive && TestLaunch.nativeHome && (screen == "welcome" || screen == "signIn") {
-                return call.resolve()
-            }
-        #endif
-        DispatchQueue.main.async {
-            guard let presenter = self.bridge?.viewController, self.openScreen == nil else {
-                call.reject("Nothing to show the screen on")
-                return
-            }
-            self.pageBuild = build
-            self.pageUserAgent = userAgent
-            self.present(screen, on: presenter, build: build, userAgent: userAgent, state: state)
-            call.resolve()
-        }
-    }
-
     private func present(
         _ screen: String, on presenter: UIViewController, build: String = "dev",
         userAgent: String = "", state: [String: Any] = [:]
@@ -439,13 +244,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         var state = state
         if parts.count > 1 { state["start"] = parts[1] }
         let onChoose: (String, String) -> Void = { [weak self] lang, theme in
-            // Without the page the app applies it itself (#202); with it, the page does and says so back.
-            if PageFree.on {
-                NativePreferences.shared.lang = lang
-                NativePreferences.shared.theme = theme
-                AppSession.shared.keepLanguage()
-            }
-            self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
+            _ = self
+            NativePreferences.shared.lang = lang
+            NativePreferences.shared.theme = theme
+            AppSession.shared.keepLanguage()
         }
         let onDone: () -> Void = { [weak self] in self?.dismissOpenScreen() }
         let enablePush: () async -> String = { [weak self] in
@@ -724,69 +526,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// `{ mark, addedTo?, error? }`: the trip as the page has it now, after an answer.
-    @objc func setTrip(_ call: CAPPluginCall) {
-        let mark = Self.decodeMark(call.getObject("mark"))
-        let addedTo = call.getString("addedTo")
-        let error = call.getString("error")
-        DispatchQueue.main.async {
-            let model = TripModel.shared
-            model.show(mark)
-            if let addedTo { model.addedTo = addedTo }
-            model.failure = error
-            call.resolve()
-        }
-    }
-
-    /// The home page as the page has it (#201): whether it is shown, whether
-    /// something of the page's is over it, and what it adds to the month.
-    @objc func setHome(_ call: CAPPluginCall) {
-        #if DEBUG
-            // Under a UI test the test plays the page; a page signed in on the simulator mustn't.
-            if TestLaunch.isActive && TestLaunch.nativeHome { return call.resolve() }
-        #endif
-        let extrasRaw: Any? = call.getArray("extras")
-        let extras: [MonthItem] = Self.decode([MonthItem].self, extrasRaw) ?? []
-        let colorsRaw: Any? = call.getObject("colors")
-        let colors: [String: String] = colorsRaw as? [String: String] ?? [:]
-        let starredRaw: Any? = call.getArray("starred")
-        let starredList: [Double] = starredRaw as? [Double] ?? []
-        let starred: Set<Int64> = Set(starredList.map { Int64($0) })
-        let shown = call.getBool("shown") ?? false
-        let covered = call.getBool("covered") ?? false
-        let pill = call.getString("pill")
-        let tell = call.getBool("tell") ?? false
-        let holidaysHidden = call.getBool("holidaysHidden") ?? false
-        let tourSeen = call.getArray("tourSeen")?.compactMap { $0 as? String }
-        let dataAt = call.getDouble("dataAt") ?? 0
-        let importantRaw: Any? = call.getArray("important")
-        let important: [LabelledEvent] = Self.decode([LabelledEvent].self, importantRaw) ?? []
-        let badgesRaw: [String: Any] = call.getObject("badges") ?? [:]
-        let badges = HomeBadges(
-            calendars: badgesRaw["calendars"] as? Int ?? 0, events: badgesRaw["events"] as? Int ?? 0,
-            profile: badgesRaw["profile"] as? Int ?? 0)
-        DispatchQueue.main.async {
-            var fresh = HomeFromPage()
-            fresh.shown = shown
-            fresh.covered = covered
-            fresh.extras = extras
-            fresh.colors = colors
-            fresh.starred = starred
-            fresh.pill = pill
-            fresh.tell = tell
-            fresh.holidaysHidden = holidaysHidden
-            fresh.badges = badges
-            fresh.important = important
-            fresh.dataAt = dataAt
-            HomeModel.shared.update(fresh)
-            if let tourSeen { HomeModel.shared.rememberTourSeen(tourSeen) }
-            // The page has caught up: nothing of its own is over the month any more.
-            if !covered { self.homeHeld = false }
-            self.placeHome()
-            call.resolve()
-        }
-    }
-
     /// The native home over the web view, while the switch is on, the page is
     /// on its home page and nothing only the page draws is over the month.
     private var homeHost: UIHostingController<HomeScreen>?
@@ -835,7 +574,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         // are over the native home page, which stays: else the page's own home page showed
         // under them, its buttons and rows a little off.
         let wanted = NativeHome.on && page.shown && (!page.covered || pileUp || homeHeld || planPending || openScreen == "plan")
-        guard let main = bridge?.viewController else { return }
+        guard let main = root else { return }
         if wanted && homeHost == nil {
             let host = UIHostingController(rootView: HomeScreen(preferences: NativePreferences.shared))
             host.view.backgroundColor = .clear
@@ -852,8 +591,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             homeHost = host
         }
         homeHost?.view.isHidden = !wanted
-        // The page's own home page is under it, unseen: not for VoiceOver either.
-        bridge?.webView?.scrollView.accessibilityElementsHidden = wanted
         // Casy's own light or dark, which the page may choose apart from the phone's.
         let theme = NativePreferences.shared.theme
         homeHost?.overrideUserInterfaceStyle = theme == "dark" ? .dark : theme == "light" ? .light : .unspecified
@@ -866,210 +603,22 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// `{ id, outcome }`: how the page's send of the phone's calendars went.
-    /// The page's answer to a sign-in step (#282, nativeAuth.ts).
-    @objc func authAnswered(_ call: CAPPluginCall) {
-        let id = call.getInt("id") ?? 0
-        let said = call.getObject("answer") ?? [:]
-        let answer = AuthAnswer(
-            outcome: said["outcome"] as? String ?? "failed", error: said["error"] as? String,
-            unconfirmed: said["unconfirmed"] as? Bool ?? false, count: said["count"] as? Int)
-        DispatchQueue.main.async {
-            PageAuth.shared.answered(id, answer)
-            call.resolve()
-        }
-    }
-
-    @objc func phoneSynced(_ call: CAPPluginCall) {
-        let id = call.getInt("id")
-        let outcome = call.getObject("outcome") ?? [:]
-        DispatchQueue.main.async {
-            if id == self.syncsAsked {
-                self.syncAnswer?.resume(
-                    returning: PhoneSyncOutcome(
-                        state: outcome["state"] as? String ?? "failed",
-                        calendars: outcome["calendars"] as? Int ?? 0,
-                        busyBlocks: outcome["busyBlocks"] as? Int ?? 0,
-                        error: outcome["error"] as? String,
-                        connectionId: outcome["connectionId"] as? String))
-                self.syncAnswer = nil
-            }
-            call.resolve()
-        }
-    }
-
-    /// The phone's calendars are read and sent by the page (usePhoneCalendarSync):
-    /// it asks, and waits up to two minutes, iOS's own question included.
-    @MainActor private func syncPhone(create: Bool) async -> PhoneSyncOutcome {
-        syncAnswer?.resume(returning: PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed))
-        syncAnswer = nil
-        #if DEBUG
-            if TestLaunch.isActive {
-                return TestLaunch.phoneSync == "denied"
-                    ? PhoneSyncOutcome(state: "denied")
-                    : PhoneSyncOutcome(state: "synced", calendars: 2, busyBlocks: 5, connectionId: "c-phone")
-            }
-        #endif
-        return await withCheckedContinuation { continuation in
-            syncAnswer = continuation
-            syncsAsked += 1
-            let asked = syncsAsked
-            notifyListeners("needPhoneSync", data: ["id": asked, "create": create])
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(120))
-                guard let self, self.syncsAsked == asked else { return }
-                self.syncAnswer?.resume(
-                    returning: PhoneSyncOutcome(state: "failed", error: CasyStrings.phoneSaveFailed))
-                self.syncAnswer = nil
-            }
-        }
-    }
-
-    /// `{ userId, labels, corrections }`: the label book the page kept before the
-    /// app labelled, handed over once (#282).
-    @objc func labelsFromPage(_ call: CAPPluginCall) {
-        guard let userId = call.getString("userId") else { return call.resolve() }
-        let labels: LabelBook = Self.decode(LabelBook.self, call.getObject("labels")) ?? [:]
-        let corrections: [PhoneLabelCorrection] = Self.decode([PhoneLabelCorrection].self, call.getArray("corrections")) ?? []
-        DispatchQueue.main.async {
-            LabelsWork.shared.adopt(userId, labels: labels, corrections: corrections)
-            call.resolve()
-        }
-    }
-
-    /// `{ userId, legs }`: the trips' legs the page kept before the app read them (#282).
-    @objc func legsFromPage(_ call: CAPPluginCall) {
-        guard let userId = call.getString("userId") else { return call.resolve() }
-        let legs: LegBook = Self.decode(LegBook.self, call.getObject("legs")) ?? [:]
-        let answers = Self.decode(TripAnswers.self, call.getObject("answers"))
-        DispatchQueue.main.async {
-            TripsWork.shared.adopt(userId, legs: legs)
-            if let answers { HomeTrips.shared.adopt(userId, answers: answers) }
-            call.resolve()
-        }
-    }
-
-    /// `{ userId, correction, count }`: a label corrected on the page ("Forkert?").
-    @objc func labelCorrected(_ call: CAPPluginCall) {
-        guard let userId = call.getString("userId"),
-            let correction = Self.decode(PhoneLabelCorrection.self, call.getObject("correction"))
-        else { return call.resolve() }
-        let count = call.getInt("count") ?? 1
-        DispatchQueue.main.async {
-            LabelsWork.shared.corrected(userId, correction: correction, count: count)
-            call.resolve()
-        }
-    }
-
-    /// `{ userId? }`: what the AI made of this phone's calendar goes, for one
-    /// person (the AI's consent withdrawn) or everyone (signed out).
-    @objc func clearPhoneAi(_ call: CAPPluginCall) {
-        let userId = call.getString("userId")
-        DispatchQueue.main.async {
-            LabelsWork.shared.clear(userId)
-            call.resolve()
-        }
-    }
-
-    /// `{ labels }`: how many labels the page keeps on this phone (#112).
-    @objc func phoneFacts(_ call: CAPPluginCall) {
-        let labels = call.getInt("labels") ?? 0
-        DispatchQueue.main.async {
-            self.factsAnswer?.resume(returning: labels)
-            self.factsAnswer = nil
-            call.resolve()
-        }
-    }
-
-    /// The labels are the page's, kept in its storage: it counts them.
-    @MainActor private func askLabels() async -> Int {
-        factsAnswer?.resume(returning: 0)
-        factsAnswer = nil
-        #if DEBUG
-            if TestLaunch.isActive { return 0 }
-        #endif
-        return await withCheckedContinuation { continuation in
-            factsAnswer = continuation
-            factsAsked += 1
-            let asked = factsAsked
-            notifyListeners("needPhoneFacts", data: [:])
-            // A page that doesn't answer (reloading, not listening yet) must
-            // not keep Dine data loading for ever: no count after 3 seconds.
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(3))
-                guard let self, self.factsAsked == asked else { return }
-                self.factsAnswer?.resume(returning: 0)
-                self.factsAnswer = nil
-            }
-        }
-    }
-
-    /// The page has written what Casy keeps in the phone's calendar.
-    /// `{ id }`: which ask it answers, so a late answer to one that timed out
-    /// can't end a newer wait before its write is done.
-    @objc func phoneWritten(_ call: CAPPluginCall) {
-        let id = call.getInt("id")
-        DispatchQueue.main.async {
-            if id == self.writesAsked {
-                self.writeAnswer?.resume()
-                self.writeAnswer = nil
-            }
-            call.resolve()
-        }
-    }
-
     /// The phone's calendar written: by the app's own sync where it sends the phone's
     /// calendars, else by the page's (usePhoneCalendarSync), waited for up to 15 seconds.
     @MainActor private func writeOnPhone() async {
         // The app sends the phone's calendars itself (#282): its sync carries out the writes after.
-        if PhoneSyncWork.on {
-            _ = await PhoneSyncWork.shared.sync(create: false)
-            return
-        }
-        writeAnswer?.resume()
-        writeAnswer = nil
-        #if DEBUG
-            if TestLaunch.isActive { return }
-        #endif
-        await withCheckedContinuation { continuation in
-            writeAnswer = continuation
-            writesAsked += 1
-            let asked = writesAsked
-            notifyListeners("needPhoneWrite", data: ["id": asked])
-            Task { @MainActor [weak self] in
-                try? await Task.sleep(for: .seconds(15))
-                guard let self, self.writesAsked == asked else { return }
-                self.writeAnswer?.resume()
-                self.writeAnswer = nil
-            }
-        }
-    }
-
-    /// `{ answer }`: how turning notifications on went, from the web view.
-    @objc func pushResult(_ call: CAPPluginCall) {
-        let answer = call.getString("answer") ?? "failed"
-        DispatchQueue.main.async {
-            self.finishPush(answer)
-            call.resolve()
-        }
+        guard PhoneSyncWork.on else { return }
+        _ = await PhoneSyncWork.shared.sync(create: false)
     }
 
     /// Turned on by the app itself (#202), or else by the web view, where the phone's token reaches only the page.
     @MainActor private func enablePush() async -> String {
         if PushWork.on { return await PushWork.shared.enable() }
-        finishPush("failed")
         #if DEBUG
+            // A test launch without the app's push work: its made-up answer.
             if let answer = TestLaunch.pushAnswer { return answer }
         #endif
-        return await withCheckedContinuation { continuation in
-            pushAnswer = continuation
-            notifyListeners("enablePush", data: [:])
-        }
-    }
-
-    private func finishPush(_ answer: String) {
-        pushAnswer?.resume(returning: answer)
-        pushAnswer = nil
+        return "failed"
     }
 
     /// `then` goes with `closed`: what the page does next, as one message, so
@@ -1080,7 +629,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     private func fitOpenSheet(_ height: CGFloat, _ fit: SheetFit) {
         guard abs(fit.height - height) > 0.5 else { return }
         fit.height = height
-        guard let sheet = bridge?.viewController?.presentedViewController?.sheetPresentationController else {
+        guard let sheet = root?.presentedViewController?.sheetPresentationController else {
             return
         }
         sheet.animateChanges { sheet.invalidateDetents() }
@@ -1091,7 +640,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// The open sheet as tall as it goes: the 85 % where it has it, else whole.
     private func growOpenSheet() {
-        guard let sheet = bridge?.viewController?.presentedViewController?.sheetPresentationController else {
+        guard let sheet = root?.presentedViewController?.sheetPresentationController else {
             return
         }
         let tallest: UISheetPresentationController.Detent.Identifier =
@@ -1104,7 +653,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// whole screen over the home page. Ret planen brings the sheet back, the
     /// plan as it was; closing or sending ends Planlæg, which the page hears.
     private func showPile() {
-        guard let presenter = bridge?.viewController else { return }
+        guard let presenter = root else { return }
         // Ret planen's sheet over the pile: it goes, and the pile plays again where it is,
         // from the month it was on (scrolled on only if the dates' month changed).
         if let pile = pileHost, pile.presentingViewController != nil, pile.presentedViewController != nil {
@@ -1132,8 +681,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     self?.pileUp = false
                     HomeModel.shared.backToToday()
                     if PlanModel.shared.again != nil {
-                        // The vote has its new dates: the page's lists are fetched again.
-                        self?.notifyListeners("dataChanged", data: [:])
+                        // The vote has its new dates: Aftaler's list fetched again.
+                        Task { await EventsModel.shared.load() }
                         self?.backToVote()
                     } else {
                         self?.dismissOpenScreen(["sent": true])
@@ -1156,7 +705,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// Done searching a vote again (#240): Planlæg closes back onto the vote,
     /// in Aftaler as it was, and the plan is as it was before.
     private func backToVote() {
-        guard let presenter = bridge?.viewController, let id = PlanModel.shared.again?.eventId else { return }
+        guard let presenter = root, let id = PlanModel.shared.again?.eventId else { return }
         PlanModel.shared.endAgain()
         let reopen = { [weak self] in self?.present("events", on: presenter, state: ["vote": id]) }
         if presenter.presentedViewController != nil {
@@ -1172,7 +721,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             pileUp = false
             HomeModel.shared.backToToday()
         }
-        bridge?.viewController?.presentedViewController?.dismiss(animated: true) { [weak self] in
+        root?.presentedViewController?.dismiss(animated: true) { [weak self] in
             self?.closed(then)
         }
     }
@@ -1193,19 +742,12 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     private func closed(_ then: [String: Any] = [:]) {
-        finishPush("failed")
         guard let screen = openScreen else { return }
         openScreen = nil
-        let here = openedHere || PageFree.on
-        openedHere = false
         if openProfileOn(then) { return }
-        if here {
-            closedHere(screen, then)
-        } else {
-            notifyListeners("closed", data: then.merging(["screen": screen]) { $1 })
-        }
-        // Without the page, signed out: whatever closed, the welcome is what is left.
-        if PageFree.on, welcomeUp {
+        closedHere(screen, then)
+        // Signed out: whatever closed, the welcome is what is left.
+        if welcomeUp {
             DispatchQueue.main.async {
                 if self.openScreen == nil, self.welcomeUp { self.showPageFree(signedIn: false) }
             }
@@ -1217,7 +759,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// An invite to a group you are in, a friend link said yes to: Profil, on
     /// that group or Venner, whoever opened the screen before it.
     private func openProfileOn(_ then: [String: Any]) -> Bool {
-        guard let presenter = bridge?.viewController, Self.nativeScreens.contains("profile") else { return false }
+        guard let presenter = root, Self.nativeScreens.contains("profile") else { return false }
         let start: ProfileStart
         if let group = then["group"] as? String {
             start = .group(group)
@@ -1227,36 +769,22 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return false
         }
         let state: [String: Any] = ["start": start.text]
-        openedHere = true
         present("profile", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
         return true
     }
 
-    /// A sheet the app opened itself, not the page: its closing isn't the page's to hear.
-    private var openedHere = false
     /// What the page last said about itself, for Profil's build line and feedback mail.
     private var pageBuild = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "dev"
     private var pageUserAgent = ""
     /// The star a Tid til hinanden sheet opened here is about: its Planlæg begins from it.
     private var openedPrime: Any?
 
-    /// `{ path }`: a push notification's or a link's address (#202). `{ opened }`: the app
-    /// showed its own screen for it; otherwise the page goes there itself, as before. Only
-    /// while the app's home page is shown and nothing is over it.
-    @objc func openPath(_ call: CAPPluginCall) {
-        let path = call.getString("path") ?? ""
-        DispatchQueue.main.async {
-            call.resolve(["opened": self.open(path: path)])
-        }
-    }
-
     private func open(path: String) -> Bool {
-        guard let route = appRoute(path), let presenter = bridge?.viewController, openScreen == nil,
+        guard let route = appRoute(path), let presenter = root, openScreen == nil,
             NativeHome.on, HomeModel.shared.page.shown
         else { return false }
         func sheet(_ screen: String, _ state: [String: Any]) -> Bool {
             guard Self.nativeScreens.contains(screen) else { return false }
-            openedHere = true
             present(screen, on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
             return true
         }
@@ -1319,42 +847,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// Signing out on the page (#202): this phone's token taken back by the app first.
-    @objc func forgetPush(_ call: CAPPluginCall) {
-        Task { @MainActor in
-            await PushWork.shared.forget()
-            call.resolve()
-        }
-    }
-
-    /// Turning notifications on from one of the page's screens (#202): done by the app.
-    @objc func enablePushInApp(_ call: CAPPluginCall) {
-        Task { @MainActor in
-            call.resolve(["answer": await PushWork.shared.enable()])
-        }
-    }
-
-    /// `{ reason }`: a moment the page saw that is worth asking for notifications at (#202):
-    /// the app decides whether it is time and shows its sheet.
-    @objc func askPush(_ call: CAPPluginCall) {
-        let reason = call.getString("reason") ?? "sent"
-        DispatchQueue.main.async {
-            Asks.shared.push(reason)
-            call.resolve()
-        }
-    }
-
-    /// `{ pushAsked, pushLast?, reviewAsked? }`: what the page counted before the app asked itself.
-    @objc func asksFromPage(_ call: CAPPluginCall) {
-        let asked = call.getInt("pushAsked") ?? 0
-        let last = call.getDouble("pushLast")
-        let review = call.getDouble("reviewAsked")
-        DispatchQueue.main.async {
-            Asks.shared.adopt(pushAsked: asked, pushLast: last, reviewAsked: review)
-            call.resolve()
-        }
-    }
-
     /// A home page press the app answers with its own sheet; false leaves it to the page.
     private func route(_ action: String, _ day: Int64?) -> Bool {
         // The moments the app asks at (#202): a vote's last answer, an agreed date landed.
@@ -1363,10 +855,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return true
         }
         if Asks.on && action == "landed" {
-            Asks.shared.review(in: bridge?.viewController?.view.window?.windowScene)
+            Asks.shared.review(in: root?.view.window?.windowScene)
             return true
         }
-        guard Self.nativeScreens.contains(action), let presenter = bridge?.viewController, openScreen == nil else {
+        guard Self.nativeScreens.contains(action), let presenter = root, openScreen == nil else {
             return false
         }
         var state: [String: Any] = [:]
@@ -1387,7 +879,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         default:
             return false
         }
-        openedHere = true
         present(action, on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
         return true
     }
@@ -1407,8 +898,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         // Hjem from an invite or a friend link: the home page is under it already.
         if then["next"] as? String == "/" { return }
-        if then["plan"] as? Bool == true, let presenter = bridge?.viewController {
-            openedHere = true
+        if then["plan"] as? Bool == true, let presenter = root {
             present("plan", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: prime.map { ["prime": $0] } ?? [:])
             return
         }
@@ -1421,8 +911,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 HomeModel.shared.voteToOpen = parts[1]
                 return
             case "plan" where parts.count == 1:
-                if let presenter = bridge?.viewController {
-                    openedHere = true
+                if let presenter = root {
                     present("plan", on: presenter, build: pageBuild, userAgent: pageUserAgent)
                     return
                 }
@@ -1436,8 +925,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
         }
         if then.isEmpty { return }
-        if PageFree.on { return pageFreeLeave(then) }
-        notifyListeners("leave", data: then.merging(["screen": screen]) { $1 })
+        pageFreeLeave(then)
     }
 
     // MARK: Without the page (#202)
@@ -1450,10 +938,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         #endif
         // Bliv medlem signed out: the account first, the invite kept for after (the web's `?join=1`).
         if then["signUp"] as? Bool == true, let path = then["path"] as? String,
-            let presenter = bridge?.viewController
+            let presenter = root
         {
             pendingInvite = path
-            openedHere = true
             present("signIn", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: ["signup": true])
             return
         }
@@ -1477,7 +964,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// The app on its own: no page loaded (MainViewController), the login the
+    /// The app on its own: the login the
     /// app's (AppSession), the native home always on, the welcome when signed out.
     @MainActor private func startPageFree() {
         NativePreferences.shared.applyTheme()
@@ -1532,12 +1019,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
 
     /// "Opdater appen" over everything, whatever was open (#143): nothing else is usable now.
     @MainActor private func showUpdate(_ store: URL?) {
-        guard let presenter = bridge?.viewController else { return }
+        guard let presenter = root else { return }
         let state: [String: Any] = store.map { ["storeUrl": $0.absoluteString] } ?? [:]
         let up = { [weak self] in
             guard let self else { return }
             self.openScreen = nil
-            self.openedHere = true
             self.present("update", on: presenter, build: self.pageBuild, userAgent: self.pageUserAgent, state: state)
         }
         if presenter.presentedViewController != nil {
@@ -1558,7 +1044,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         page.covered = false
         if page != HomeModel.shared.page { HomeModel.shared.update(page) }
         placeHome()
-        guard let presenter = bridge?.viewController else { return }
+        guard let presenter = root else { return }
         if !signedIn {
             guard openScreen == nil else { return }
             // A link that came before the login was read: its screen instead of the welcome.
@@ -1582,7 +1068,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// signed-in or signed-out person sees it; `auto` carries out the yes said
     /// before making the account. False for any other address.
     @MainActor private func openInviteWithoutPage(_ path: String, auto: Bool = false) -> Bool {
-        guard PageFree.on, let route = appRoute(path), let presenter = bridge?.viewController else { return false }
+        guard let route = appRoute(path), let presenter = root else { return false }
         let signedIn = AppSession.shared.session != nil
         let screen: String
         let state: [String: Any]
@@ -1596,7 +1082,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         #endif
         let show = { [weak self] in
             guard let self else { return }
-            self.openedHere = true
             self.present(screen, on: presenter, build: self.pageBuild, userAgent: self.pageUserAgent, state: state)
         }
         if let shown = presenter.presentedViewController {
@@ -1605,7 +1090,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // shows a sheet closes only the sheet).
             guard openScreen == nil || openScreen == "welcome" || openScreen == "signIn" else { return false }
             openScreen = nil
-            openedHere = false
             shown.dismiss(animated: false, completion: show)
         } else {
             show()

@@ -14,7 +14,7 @@ import Foundation
 final class TripsWork {
     static let shared = TripsWork()
 
-    static var on: Bool { NativeBridgePlugin.nativeLabels }
+    static var on: Bool { AppCoordinator.nativeLabels }
 
     private(set) var book: LegBook = [:]
     private(set) var status = "not started"

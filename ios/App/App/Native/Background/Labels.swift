@@ -30,7 +30,7 @@ final class LabelsWork {
     static let shared = LabelsWork()
 
     /// Whether the app labels in this build (the page then doesn't): with the native screens.
-    static var on: Bool { NativeBridgePlugin.nativeLabels }
+    static var on: Bool { AppCoordinator.nativeLabels }
 
     private(set) var book: LabelBook = [:]
     private(set) var corrections: [PhoneLabelCorrection] = []

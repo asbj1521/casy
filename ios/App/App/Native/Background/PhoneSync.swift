@@ -21,7 +21,7 @@ import UIKit
 final class PhoneSyncWork {
     static let shared = PhoneSyncWork()
 
-    static var on: Bool { NativeBridgePlugin.nativeLabels }
+    static var on: Bool { AppCoordinator.nativeLabels }
 
     /// Tells the page this phone's connection for someone (nil: none any more).
     var connection: (_ userId: String, _ connectionId: String?) -> Void = { _, _ in }

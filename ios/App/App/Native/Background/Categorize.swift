@@ -16,7 +16,7 @@ final class CategorizeWork {
     static let shared = CategorizeWork()
 
     /// Whether the app sorts in this build (the page then doesn't): with the labels.
-    static var on: Bool { NativeBridgePlugin.nativeLabels }
+    static var on: Bool { AppCoordinator.nativeLabels }
 
     /// Told when calendars got a category, for what shows them to read again.
     var changed: () -> Void = {}

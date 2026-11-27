@@ -22,7 +22,7 @@ final class LivePulse {
         #if DEBUG
             if TestLaunch.isActive { return TestLaunch.live }
         #endif
-        return NativeBridgePlugin.nativeLabels
+        return AppCoordinator.nativeLabels
     }
 
     /// For Dine data's testing rows: how the app hears about changes now.
