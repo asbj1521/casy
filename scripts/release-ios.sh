@@ -107,6 +107,7 @@ npm run build
 # Without CAP_LIVE_URL the copied config has no server address. An address
 # left there by npm run ios:live would make the app load from this Mac.
 env -u CAP_LIVE_URL -u CAP_WEB_DIR npx cap sync ios
+bash scripts/native/project-endpoint.sh
 ! grep -q '"server"' "$CONFIG_COPY" || die "$CONFIG_COPY still has a server address; the app would load from this Mac"
 
 # --- Archive ---------------------------------------------------------------

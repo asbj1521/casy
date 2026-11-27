@@ -64,6 +64,7 @@ if [ ! -f dist/index.html ]; then
   echo "<!doctype html>" >dist/index.html
 fi
 CAP_LIVE_URL="http://$host:$PORT" npx cap sync ios
+bash scripts/native/project-endpoint.sh
 
 if $device; then
   echo "ios-live: the app now points at http://$host:$PORT."

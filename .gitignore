@@ -36,3 +36,4 @@ playwright-report
 # Local Swift packages: their build and Xcode's per-user folders
 ios/Packages/*/.build
 ios/Packages/*/.swiftpm
+ios/App/App/Native/Session/ProjectBuiltIn.generated.swift

@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "knip": "knip",
     "preview": "vite preview",
-    "ios": "npm run build && cap sync ios",
+    "ios": "npm run build && cap sync ios && bash scripts/native/project-endpoint.sh",
     "ios:live": "bash scripts/ios-live.sh",
     "ios:parity": "bash scripts/native/parity-build.sh",
     "test": "vitest",

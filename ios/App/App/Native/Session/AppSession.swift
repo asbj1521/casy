@@ -81,7 +81,8 @@ enum SessionKeychain {
 }
 
 /// Where the project is: what the page said (its build's Supabase address and
-/// publishable key), kept so the app can sign in without it.
+/// publishable key), kept so the app can sign in without it; else what the app
+/// was built with (`ProjectBuiltIn`, scripts/native/project-endpoint.sh).
 enum ProjectEndpoint {
     private static let urlKey = "casy.project.url"
     private static let apiKeyKey = "casy.project.key"
@@ -92,10 +93,22 @@ enum ProjectEndpoint {
     }
 
     static var current: (url: URL, apiKey: String)? {
-        guard let url = UserDefaults.standard.string(forKey: urlKey).flatMap(URL.init(string:)),
+        #if DEBUG
+            // A UI test's made-up login never reaches the real project.
+            if let backend = TestLaunch.backend { return (backend, "test-key") }
+        #endif
+        if let url = UserDefaults.standard.string(forKey: urlKey).flatMap(URL.init(string:)),
             let key = UserDefaults.standard.string(forKey: apiKeyKey)
-        else { return nil }
-        return (url, key)
+        {
+            return (url, key)
+        }
+        guard let url = URL(string: ProjectBuiltIn.url), !ProjectBuiltIn.apiKey.isEmpty else { return nil }
+        return (url, ProjectBuiltIn.apiKey)
+    }
+
+    /// Where auth-js keeps the page's login (src/lib/supabase.ts): `sb-<project ref>-auth-token`.
+    static var pageStorageKey: String? {
+        current?.url.host?.split(separator: ".").first.map { "sb-\($0)-auth-token" }
     }
 }
 
@@ -118,16 +131,31 @@ final class AppSession {
     }
 
     /// At launch: the login kept, made fresh if it ran out while the app was closed.
+    /// None kept, the page's is taken over once: how someone signed in before the
+    /// app owned its login stays signed in (PageLogin).
     func start() {
-        guard let kept = SessionKeychain.load() else {
-            changed(nil)
-            return
-        }
-        adopt(kept)
         NotificationCenter.default.addObserver(
             forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { _ in
             MainActor.assumeIsolated { AppSession.shared.schedule() }
+        }
+        #if DEBUG
+            // `-casyForgetLogin YES`: a test starts with no login of the app's own.
+            if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyForgetLogin") { SessionKeychain.delete() }
+        #endif
+        if let kept = SessionKeychain.load() {
+            adopt(kept)
+            return
+        }
+        Task {
+            if let json = await PageLogin.take(), takeOver(pageJSON: json) {
+                #if DEBUG
+                    NSLog("AppSession: the page's login taken over")
+                #endif
+                // One that ran out long ago is made fresh at once (adopt's schedule), or signed out.
+                return
+            }
+            changed(nil)
         }
     }
 
