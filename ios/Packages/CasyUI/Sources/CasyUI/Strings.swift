@@ -977,10 +977,6 @@ public enum CasyStrings {
     public static var dayShowOne: String { text("calendarView.showOneDay") }
     public static var dayShowTwo: String { text("calendarView.showTwoDays") }
     public static func dayShowMonth(_ month: String) -> String { format("swipe.showMonth", month) }
-    public static var adminNativeHome: String { text("admin.nativeHome") }
-    public static var adminNativeHomeDetail: String { text("admin.nativeHomeDetail") }
-    public static var adminPageFree: String { text("admin.pageFree") }
-    public static var adminPageFreeDetail: String { text("admin.pageFreeDetail") }
     public static var calendarsListTitle: String { text("calendarView.listTitle") }
     public static var calendarsListIntro: String { text("calendarView.listIntro") }
     public static var calendarsHelpLabel: String { text("calendarView.priorityHelpLabel") }

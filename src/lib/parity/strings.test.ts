@@ -1296,16 +1296,6 @@ const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
     da: "Åbn Safari, og gå til Apples kontoside:",
     en: "Open Safari and go to Apple's account page:",
   },
-  "admin.nativeHome": { da: "Native forside", en: "Native home page" },
-  "admin.nativeHomeDetail": {
-    da: "Forsiden tegnet i Swift, kun på denne telefon",
-    en: "The home page drawn in Swift, on this phone only",
-  },
-  "admin.pageFree": { da: "Uden side", en: "Without the page" },
-  "admin.pageFreeDetail": {
-    da: "Appen logger selv ind og åbner ikke websiden. Den lukker, når du skifter, så åbn den igen.",
-    en: "The app signs in itself and doesn't open the website. It closes when you switch, so open it again.",
-  },
 };
 
 interface Catalog {

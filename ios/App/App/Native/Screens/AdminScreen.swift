@@ -156,9 +156,6 @@ struct AdminScreen: View {
     @State private var tab = Tab.groups
     @State private var query = ""
     @State private var problemsOnly = false
-    @State private var nativeHome = NativeHome.on
-    @State private var pageFree = PageFree.on
-    @State private var switchingPage = false
     @State private var asking: AdminAsk?
     @State private var removingMember: String?
     @State private var testerSaving: Set<String> = []
@@ -184,44 +181,6 @@ struct AdminScreen: View {
                 if let notice = model.notice { deletedNotice(notice).padding(.top, 16) }
                 listsCard.padding(.top, 24)
                 AdminReviewCards(asking: $asking)
-                #if DEBUG
-                    // The home page drawn in Swift while it is built (#201), on this
-                    // phone only: the app's own switch, not on the web.
-                    CardList {
-                        CardRow(CasyStrings.adminNativeHome, detail: CasyStrings.adminNativeHomeDetail) {
-                            EmptyView()
-                        } trailing: {
-                            Toggle(CasyStrings.adminNativeHome, isOn: $nativeHome)
-                                .labelsHidden()
-                                .tint(Theme.primary.color)
-                        }
-                        .accessibilityElement(children: .contain)
-                    }
-                    .accessibilityIdentifier("admin.nativeHome")
-                    .onChange(of: nativeHome) { _, on in NativeHome.on = on }
-                    // The app without its page (#202): the login moves, and the app closes to open again.
-                    CardList {
-                        CardRow(CasyStrings.adminPageFree, detail: CasyStrings.adminPageFreeDetail) {
-                            EmptyView()
-                        } trailing: {
-                            Toggle(CasyStrings.adminPageFree, isOn: $pageFree)
-                                .labelsHidden()
-                                .tint(Theme.primary.color)
-                                .disabled(switchingPage)
-                        }
-                        .accessibilityElement(children: .contain)
-                    }
-                    .padding(.top, 12)
-                    .accessibilityIdentifier("admin.pageFree")
-                    .onChange(of: pageFree) { _, on in
-                        guard on != PageFree.on, !switchingPage else { return }
-                        switchingPage = true
-                        Task {
-                            if await PageFreeSwitch.run?(on) != true { pageFree = PageFree.on }
-                            switchingPage = false
-                        }
-                    }
-                #endif
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)

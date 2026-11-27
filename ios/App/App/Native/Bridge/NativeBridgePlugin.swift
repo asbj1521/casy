@@ -34,7 +34,6 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "openPath", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "askPush", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "forgetPush", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "sessionHandedOver", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "enablePushInApp", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "asksFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
@@ -50,13 +49,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     private static let nativeScreens: [String] = {
         #if DEBUG
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
-            return [
-                "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
-                "home", "plan", "signIn", "welcome", "invitePaste", "join", "friend",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks", "notifications"] : [])
-        #else
-            return []
         #endif
+        return [
+            "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
+            "home", "plan", "signIn", "welcome", "invitePaste", "join", "friend",
+        ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks", "notifications"] : [])
     }()
 
     /// The background work this build does natively, named in `screens` too so
@@ -67,10 +64,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// test, whose made-up login has no phone calendars to label.
     static let nativeLabels: Bool = {
         #if DEBUG
-            return !TestLaunch.isActive || TestLaunch.seedPhone
-        #else
-            return false
+            if TestLaunch.isActive { return TestLaunch.seedPhone }
         #endif
+        return true
     }()
 
     private var openScreen: String? {
@@ -244,13 +240,10 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         // Without its page (#202): once the controller is on screen, the app's own login and home.
         if PageFree.on {
-            PageFreeSwitch.run = { [weak self] on in await self?.switchPageFree(on) ?? false }
             Task { @MainActor [weak self] in
                 while self?.bridge?.viewController?.view.window == nil { try? await Task.sleep(for: .milliseconds(50)) }
                 self?.startPageFree()
             }
-        } else {
-            PageFreeSwitch.run = { [weak self] on in await self?.switchPageFree(on) ?? false }
         }
         #if DEBUG
             startTestLaunch()
@@ -1610,44 +1603,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         return true
     }
-
-    // MARK: Handing the login between the page and the app (#202, Debug)
-
-    /// `{ session }`: the page's stored login (auth-js's JSON), handed over as
-    /// the app goes page-free; the page has forgotten it already.
-    @objc func sessionHandedOver(_ call: CAPPluginCall) {
-        let json = call.getString("session")
-        DispatchQueue.main.async {
-            self.handOverWaiter?(json)
-            self.handOverWaiter = nil
-            call.resolve()
-        }
-    }
-
-    private var handOverWaiter: ((String?) -> Void)?
-
-    /// Admin's "Uden side" (Debug): on takes the page's login and opens the app
-    /// without its page; off gives the app's login back to the page. Either way the app
-    /// closes, to open again the other way.
-    @MainActor func switchPageFree(_ on: Bool) async -> Bool {
-        if on {
-            let json: String? = await withCheckedContinuation { waiter in
-                handOverWaiter = { waiter.resume(returning: $0) }
-                notifyListeners("handOverSession", data: [:])
-            }
-            guard let json, AppSession.shared.takeOver(pageJSON: json) else { return false }
-            PageFree.set(true)
-        } else {
-            if let json = await AppSession.shared.handBack() {
-                UserDefaults.standard.set(json, forKey: PageFree.handBackKey)
-            }
-            PageFree.set(false)
-        }
-        exit(0)
-    }
 }
 
-/// How tall a sheet that fits its content wants to be, as its screen measured it.
 final class SheetFit {
     var height: CGFloat = 420
 }

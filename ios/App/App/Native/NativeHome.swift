@@ -1,28 +1,21 @@
 import Foundation
 
-/// The native home page's switch (#201): Admin's "Native forside", kept on this
-/// phone, and only in a Debug build while the home page is being built. Off,
-/// the web's home page is what is seen, as for everyone else.
+/// Whether the home page is the app's own (#201): always, now the app has no
+/// page (#202). A UI test that still plays the page's part chooses: its own
+/// home page (`-casyNativeHome YES`, `-casy.nativeHome YES`) or none.
 enum NativeHome {
     static let key = "casy.nativeHome"
     /// Posted when the switch changes, so the home page comes or goes at once.
     static let switched = Notification.Name("casy.nativeHomeSwitched")
 
     static var on: Bool {
-        get {
-            #if DEBUG
-                if TestLaunch.isActive, TestLaunch.webOnly { return false }
-                if TestLaunch.isActive, TestLaunch.nativeHome { return true }
-                // Without its page the app's home is the only one (#202).
-                if PageFree.on { return true }
+        #if DEBUG
+            if TestLaunch.isActive {
+                if TestLaunch.webOnly { return false }
+                if TestLaunch.nativeHome || PageFree.on { return true }
                 return UserDefaults.standard.bool(forKey: key)
-            #else
-                return false
-            #endif
-        }
-        set {
-            UserDefaults.standard.set(newValue, forKey: key)
-            NotificationCenter.default.post(name: switched, object: nil)
-        }
+            }
+        #endif
+        return true
     }
 }

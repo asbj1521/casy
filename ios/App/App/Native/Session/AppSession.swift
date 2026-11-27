@@ -15,18 +15,14 @@ import UIKit
 enum PageFree {
     private static let key = "casy.pageFree"
 
+    /// Always, but in a UI test that still plays the page's part itself (#202):
+    /// there, only with `-casy.pageFree YES`.
     static var on: Bool {
         #if DEBUG
-            return UserDefaults.standard.bool(forKey: key)
-        #else
-            return false
+            if TestLaunch.isActive { return UserDefaults.standard.bool(forKey: key) }
         #endif
+        return true
     }
-
-    static func set(_ on: Bool) { UserDefaults.standard.set(on, forKey: key) }
-
-    /// The app's login waiting for the page, as the switch went off.
-    static let handBackKey = "casy.pageFree.handBack"
 }
 
 /// Without the page and signed out (#202): an invite's or a friend link's
@@ -35,12 +31,6 @@ enum PageFree {
 @MainActor
 enum PageFreeLinks {
     static var openSignedOut: ((String) -> Bool)?
-}
-
-/// Admin's switch reaches the bridge through this (set as it loads).
-@MainActor
-enum PageFreeSwitch {
-    static var run: ((Bool) async -> Bool)?
 }
 
 /// The login kept in the Keychain, on this phone only, readable once it has been unlocked.
@@ -307,28 +297,5 @@ final class AppSession {
                     id: id, email: user["email"] as? String, createdAt: user["created_at"] as? String,
                     providers: identities.compactMap { $0["provider"] as? String })))
         return true
-    }
-
-    /// The app's login in auth-js's shape, for the page to take back; the app forgets it.
-    /// The whole user as Supabase has it, so the page shows the same name and ways in.
-    func handBack() async -> String? {
-        guard let session, let auth else { return nil }
-        let user =
-            (try? await auth.userJSON(accessToken: session.accessToken))
-            .flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] }
-            ?? ["id": session.user.id, "email": session.user.email ?? "", "aud": "authenticated"]
-        let json: [String: Any] = [
-            "access_token": session.accessToken,
-            "refresh_token": session.refreshToken,
-            "token_type": "bearer",
-            "expires_at": Int(session.expiresAt.timeIntervalSince1970),
-            "expires_in": max(0, Int(session.expiresAt.timeIntervalSinceNow)),
-            "user": user,
-        ]
-        timer?.cancel()
-        self.session = nil
-        SessionKeychain.delete()
-        guard let data = try? JSONSerialization.data(withJSONObject: json) else { return nil }
-        return String(data: data, encoding: .utf8)
     }
 }
