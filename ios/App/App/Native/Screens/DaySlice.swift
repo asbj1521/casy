@@ -40,7 +40,26 @@ struct DaySlice: View {
 
     private var midnight: Int64 { startOfDay(start, appTimeZone) }
 
+    /// The days the event touches: one for most, several for a trip.
+    private var spanned: [Int64] {
+        var out = [midnight]
+        var next = addDays(midnight, 1, appTimeZone)
+        while next < end {
+            out.append(next)
+            next = addDays(next, 1, appTimeZone)
+        }
+        return out
+    }
+
     var body: some View {
+        if spanned.count > 1 {
+            DaySpan(start: start, end: end, label: label, days: spanned, onOpen: onOpen)
+        } else {
+            oneDay
+        }
+    }
+
+    private var oneDay: some View {
         Group {
             if let day, !day.none {
                 Button {
@@ -303,12 +322,16 @@ struct DayOfCalendar {
         return fresh
     }
 
-    /// The days of these events read ahead (Aftaler's agreed dates), so their slices open drawn.
-    @MainActor static func readAhead(_ midnights: Set<Int64>) {
-        let wanted = midnights.filter { m in days[key(m)].map { Date().timeIntervalSince($0.at) >= freshFor } ?? true }
+    /// The days of these events read ahead (Aftaler's agreed dates, each event's
+    /// days together), so their slices open drawn.
+    @MainActor static func readAhead(_ spans: [[Int64]]) {
+        let now = Date()
+        let wanted = spans.filter { span in
+            span.contains { m in days[key(m)].map { now.timeIntervalSince($0.at) >= freshFor } ?? true }
+        }
         guard !wanted.isEmpty else { return }
         Task { @MainActor in
-            for midnight in wanted.sorted() { _ = await read(midnight) }
+            for span in wanted { _ = await readDays(span) }
         }
     }
 
@@ -316,13 +339,19 @@ struct DayOfCalendar {
     @MainActor static func forgetDays() { days = [:] }
 
     @MainActor static func load(_ midnight: Int64) async -> DayOfCalendar? {
-        guard let api = await Native.api() else { return nil }
-        let next = addDays(midnight, 1, appTimeZone)
-        guard let data = try? await api.calendarBusy(from: isoString(midnight), to: isoString(next)) else {
+        await loadDays([midnight])?[midnight]
+    }
+
+    /// Several days read at once (a trip's, #202): one calendar-busy for all
+    /// of them, each day built as a single day is.
+    @MainActor static func loadDays(_ midnights: [Int64]) async -> [Int64: DayOfCalendar]? {
+        guard let first = midnights.min(), let last = midnights.max(), let api = await Native.api() else { return nil }
+        let next = addDays(last, 1, appTimeZone)
+        guard let data = try? await api.calendarBusy(from: isoString(first), to: isoString(next)) else {
             return nil
         }
         let (blocks, own) = await Task.detached(priority: .userInitiated) {
-            phoneDrawn(data, from: midnight, to: next)
+            phoneDrawn(data, from: first, to: next)
         }.value
         let included = Set(data.calendars.filter(\.included).map(\.id))
         // What you told Casy has no tick: it always counts, so it is always drawn.
@@ -333,25 +362,45 @@ struct DayOfCalendar {
                     calendarId: casyCalendarId, start: $0.start, end: $0.end,
                     details: EventDetails(title: $0.label, location: "", notes: ""))
             }
-        var segments = segmentByDay(counted, from: midnight, to: next, appTimeZone)[dayKey(midnight, appTimeZone)] ?? []
-        // The Danish holidays first, as whole days.
-        let year = localDate(midnight, appTimeZone).year
+        let byDay = segmentByDay(counted, from: first, to: next, appTimeZone)
         let lang = CasyStrings.language == "en" ? Lang.en : Lang.da
-        var holidayNames: [String: String] = [:]
-        let holidays = danishHolidays(year, appTimeZone).filter { $0.date == midnight }
-        for h in holidays {
-            holidayNames[h.key] = lang == .da ? h.name : h.englishName
+        let colors = calendarColors(data.calendars, own: own)
+        let names = Dictionary(data.calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a })
+        var years: [Int: [Holiday]] = [:]
+        var out: [Int64: DayOfCalendar] = [:]
+        for midnight in midnights {
+            let dayEnd = addDays(midnight, 1, appTimeZone)
+            let year = localDate(midnight, appTimeZone).year
+            if years[year] == nil { years[year] = danishHolidays(year, appTimeZone) }
+            // The Danish holidays first, as whole days.
+            let holidays = (years[year] ?? []).filter { $0.date == midnight }
+            var holidayNames: [String: String] = [:]
+            for h in holidays { holidayNames[h.key] = lang == .da ? h.name : h.englishName }
+            let segments =
+                holidays.map {
+                    DaySegment(
+                        calendarId: holidayCalendarId, start: $0.date, end: dayEnd, allDay: true,
+                        continuesBefore: false, continuesAfter: false, details: nil)
+                } + (byDay[dayKey(midnight, appTimeZone)] ?? [])
+            out[midnight] = DayOfCalendar(
+                segments: segments, colors: colors, names: names, holidays: holidayNames,
+                none: data.calendars.isEmpty)
         }
-        segments =
-            holidays.map {
-                DaySegment(
-                    calendarId: holidayCalendarId, start: $0.date, end: next, allDay: true,
-                    continuesBefore: false, continuesAfter: false, details: nil)
-            } + segments
-        return DayOfCalendar(
-            segments: segments, colors: calendarColors(data.calendars, own: own),
-            names: Dictionary(data.calendars.map { ($0.id, $0.name) }, uniquingKeysWith: { a, _ in a }),
-            holidays: holidayNames, none: data.calendars.isEmpty)
+        return out
+    }
+
+    /// Several days, from what was read lately or read now in one go.
+    @MainActor static func readDays(_ midnights: [Int64]) async -> [Int64: DayOfCalendar]? {
+        let now = Date()
+        if midnights.allSatisfy({ m in days[key(m)].map { now.timeIntervalSince($0.at) < freshFor } ?? false }) {
+            return Dictionary(uniqueKeysWithValues: midnights.compactMap { m in kept(m).map { (m, $0) } })
+        }
+        guard let fresh = await loadDays(midnights) else {
+            let old = midnights.compactMap { m in kept(m).map { (m, $0) } }
+            return old.count == midnights.count ? Dictionary(uniqueKeysWithValues: old) : nil
+        }
+        for (m, day) in fresh { days[key(m)] = (day, now) }
+        return fresh
     }
 
     /// This phone's calendars drawn from the phone: their events with titles,

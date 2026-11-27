@@ -13,7 +13,8 @@
  * app too old, so the page asks it to update (#281), and `{ phoneCalendar:
  * { externalId, name } }` with that calendar on this phone (the app's labels, #282).
  *
- * POST /someone makes a change as someone else would (#202): a new vote from
+ * POST /someone makes a change as someone else would (#202): with `{ trips:
+ * true }` two agreed events over several days, otherwise a new vote from
  * Jonas waiting for Mia's answers, the pulse moved, and a broadcast on every
  * socket joined to a pulse topic. The socket is Realtime's, as much as
  * the app's live pulse speaks (PulseSocket.swift): the handshake, a join let
@@ -53,6 +54,28 @@ createServer((request, response) => {
     if (request.method === "OPTIONS") return send(204);
     const text = Buffer.concat(chunks).toString();
     if (url.pathname === "/someone") {
+      const asked = (text ? JSON.parse(text) : {}) as { trips?: boolean };
+      // Two agreed events over several days (#202): a weekend away and three weeks in Norway.
+      const run = backend.world.events.find((e) => e.title === "Løbetur");
+      if (asked.trips && run) {
+        const agreed = (id: string, title: string, start: string, end: string) => ({
+          ...structuredClone(run),
+          id,
+          title,
+          currentDate: { ...structuredClone(run.currentDate!), start, end },
+        });
+        backend.world.events.push(
+          agreed(
+            "ev-weekend",
+            "Weekendtur",
+            "2026-10-16T15:00:00.000Z",
+            "2026-10-19T19:00:00.000Z",
+          ),
+          agreed("ev-norway", "Norge", "2026-11-02T07:00:00.000Z", "2026-11-22T18:00:00.000Z"),
+        );
+        backend.world.version++;
+        return send(200, {});
+      }
       const vote = backend.world.events.find((e) => e.id === "ev-boardgames");
       if (vote) {
         backend.world.events.push({

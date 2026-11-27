@@ -44,13 +44,17 @@ final class EventsModel {
         // The agreed dates still to come: their day slices read ahead, so each opens drawn.
         let now = Self.now
         DayOfCalendar.readAhead(
-            Set(
-                events.compactMap { e -> Int64? in
-                    guard e.status == .scheduled, let date = e.currentDate, let end = parseInstant(date.end), end > now,
-                        let start = parseInstant(date.start)
-                    else { return nil }
-                    return startOfDay(start, appTimeZone)
-                }))
+            events.compactMap { e -> [Int64]? in
+                guard e.status == .scheduled, let date = e.currentDate, let end = parseInstant(date.end), end > now,
+                    let start = parseInstant(date.start)
+                else { return nil }
+                // Every day it touches, as its slice shows them.
+                var days = [startOfDay(start, appTimeZone)]
+                while let last = days.last, addDays(last, 1, appTimeZone) < end, days.count < 62 {
+                    days.append(addDays(last, 1, appTimeZone))
+                }
+                return days
+            })
     }
 
     /// A vote everyone has answered, with a date nobody declined, is decided by

@@ -43,6 +43,24 @@ final class EventsUITests: XCTestCase {
         XCTAssertTrue(row(app, "Padel").waitForExistence(timeout: 4))
     }
 
+    /// An agreed event over several days shows its days (#202): a column each up
+    /// to a week, a month strip for longer.
+    @MainActor func testATripShowsItsDays() async throws {
+        var poke = URLRequest(url: URL(string: "\(testBackend)/someone")!)
+        poke.httpMethod = "POST"
+        poke.httpBody = Data(#"{"trips":true}"#.utf8)
+        _ = try await URLSession.shared.data(for: poke)
+        let app = launch()
+        openEvent(app, "Weekendtur", group: "Løbeklubben")
+        XCTAssertTrue(app.staticTexts["U42"].waitForExistence(timeout: 10))
+        shot("span-weekend")
+        app.navigationBars.buttons.firstMatch.tap()
+        openEvent(app, "Norge", group: "Løbeklubben")
+        XCTAssertTrue(
+            app.buttons.matching(NSPredicate(format: "label == %@", "Norge")).firstMatch.waitForExistence(timeout: 10))
+        shot("span-norway")
+    }
+
     /// What needs you, what is to come and what is over, each with its group.
     func testTheRowsAreGroupedByWhatTheyNeed() {
         let app = launch()
