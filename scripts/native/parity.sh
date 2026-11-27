@@ -102,6 +102,9 @@ cut() {
   swift -suppress-warnings scripts/native/parity-frames.swift "$OUT/$1.mp4" | sed 's/^/parity:   /'
 }
 
+# The web side's app: the app as it was with its page, today's page put in it (#202).
+bash scripts/native/reference-app.sh "$DEVICE_ID"
+
 for mode in web native; do
   echo "parity: $mode"
   film "$mode"

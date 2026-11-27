@@ -33,7 +33,9 @@ final class ParityUITests: XCTestCase {
             signedOut
             ? Data("{}".utf8)
             : try await URLSession.shared.data(from: URL(string: "\(Self.backend)/parity/session")!).0
-        let app = XCUIApplication()
+        // The web side is the reference app (scripts/native/reference-app.sh): the app as it
+        // was with its page, today's page in it, since this app has none any more (#202).
+        let app = mode == "web" ? XCUIApplication(bundleIdentifier: "app.casy.reference") : XCUIApplication()
         app.launchArguments = [
             "-casyBackend", Self.backend,
             "-casyLang", "da",
@@ -82,6 +84,8 @@ final class ParityUITests: XCTestCase {
         if mode == "web" { XCTAssertFalse(swift.exists, "a native screen (\(native)) is in the web reference") }
         _ = XCTWaiter.wait(for: [expectation(description: "settle")], timeout: 2)
         if tappable || mode == "web" {
+            // What covered it, to look at: `<name>-<mode>-covered.png`.
+            if !shown.isHittable { shot("\(name)-\(mode)-covered") }
             XCTAssertTrue(shown.isHittable, "\(mode == "web" ? words : native) was covered while settling")
         }
         if mode == "web" { XCTAssertFalse(swift.exists, "a native screen (\(native)) came up while settling") }
