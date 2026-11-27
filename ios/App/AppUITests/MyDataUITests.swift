@@ -9,9 +9,9 @@ final class MyDataUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
     }
 
-    private func openMyData() -> XCUIApplication {
+    private func openMyData(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [
+        app.launchArguments = extra + [
             "-casyBackend", testBackend,
             "-casyOpenScreen", "profile",
             "-casyPushPermission", "granted",
@@ -28,6 +28,16 @@ final class MyDataUITests: XCTestCase {
 
     private func scroll(_ app: XCUIApplication, to element: XCUIElement) {
         for _ in 0..<12 where !(element.exists && element.isHittable) { app.screenList.swipeUp(velocity: .slow) }
+    }
+
+    /// At the very bottom, for testing: how the app hears others' changes (#202).
+    func testTheLiveUpdatesRowIsAtTheBottom() {
+        let app = openMyData(["-casyLive", "YES"])
+        let row = app.staticTexts["myData.live"]
+        scroll(app, to: row)
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        XCTAssertEqual(row.label, "live updates: live")
+        shot("mydata-live")
     }
 
     func testEverythingKeptIsListedInThePolicysOrder() {

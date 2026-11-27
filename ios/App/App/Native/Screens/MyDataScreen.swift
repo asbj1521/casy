@@ -183,6 +183,15 @@ struct MyDataScreen: View {
                     credentials(data)
                     blocked
                     download
+                    if LivePulse.on && Self.testing {
+                        // How the app hears others' changes now (#202): live, or asking on its own.
+                        Text(verbatim: "live updates: \(LivePulse.shared.status)")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.mutedForeground.color)
+                            .padding(.horizontal, 4)
+                            .padding(.top, 24)
+                            .accessibilityIdentifier("myData.live")
+                    }
                 } else if model.loadFailed {
                     Notice(CasyStrings.myDataLoadFailed, tone: .error)
                         .padding(.top, 24)
@@ -451,15 +460,6 @@ struct MyDataScreen: View {
             }
             fact(CasyStrings.myDataLabels, model.labels.map { "\($0)" } ?? "-")
             if HomeTrips.on && Self.testing { TripsTesting() }
-            if LivePulse.on && Self.testing {
-                // How the app hears others' changes now (#202): live, or asking on its own.
-                Text(verbatim: "live updates: \(LivePulse.shared.status)")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Theme.mutedForeground.color)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 12)
-            }
             fact(CasyStrings.myDataAiCalls, "\(data.ai.calls)")
         }
     }
