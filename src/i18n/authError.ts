@@ -29,6 +29,9 @@ export function authErrorMessage(err: { code?: string; message: string }, t: Mes
       return t.authErrors.appleTaken;
     case "manual_linking_disabled":
       return t.authErrors.linkingOff;
+    // An auth email's link already used, or too old (#202).
+    case "otp_expired":
+      return t.authErrors.linkExpired;
     default:
       return err.message;
   }

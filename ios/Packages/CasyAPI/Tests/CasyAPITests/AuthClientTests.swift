@@ -134,3 +134,18 @@ private func body(_ request: URLRequest?) -> [String: Any] {
     let session = try JSONDecoder().decode(AuthSession.self, from: Data(old.utf8))
     #expect(session.user.lang == nil)
 }
+
+@Test func anEmailsLinkSignsInWithItsTokenHash() async throws {
+    let wire = Wire(body: session)
+    let signedIn = try await client(wire).verifyOtp(tokenHash: "h1", type: "magiclink")
+    let request = await wire.sent.last
+    #expect(request?.httpMethod == "POST" && request?.url?.path == "/auth/v1/verify")
+    #expect(body(request)["token_hash"] as? String == "h1" && body(request)["type"] as? String == "magiclink")
+    #expect(signedIn?.user.id == "u1")
+    // Half of an email change confirmed: no login yet.
+    #expect(try await client(Wire(body: #"{"msg":"Confirmation link accepted"}"#)).verifyOtp(tokenHash: "h", type: "email_change") == nil)
+    let expired = Wire(status: 403, body: #"{"code":"otp_expired","msg":"Email link is invalid or has expired"}"#)
+    await #expect(throws: AuthError(code: "otp_expired", status: 403, message: "Email link is invalid or has expired")) {
+        _ = try await client(expired).verifyOtp(tokenHash: "h", type: "recovery")
+    }
+}

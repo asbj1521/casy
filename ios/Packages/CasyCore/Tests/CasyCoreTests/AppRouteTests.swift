@@ -23,3 +23,11 @@ import Testing
 @Test func theQrCodesAddressIsTheApp() {
     #expect(appRoute("/app") == .home)
 }
+
+@Test func anAuthEmailsLinkIsTheApps() {
+    #expect(appRoute("/sign-in?lang=da&token_hash=abc&type=magiclink") == .emailLink(tokenHash: "abc", type: "magiclink"))
+    #expect(appRoute("/sign-in?token_hash=a%2Bb&type=recovery") == .emailLink(tokenHash: "a+b", type: "recovery"))
+    // The sign-in page itself, or a link missing half, stays the website's.
+    #expect(appRoute("/sign-in") == nil)
+    #expect(appRoute("/sign-in?token_hash=abc") == nil)
+}

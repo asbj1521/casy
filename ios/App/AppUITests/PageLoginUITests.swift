@@ -84,4 +84,25 @@ final class PageLoginUITests: XCTestCase {
         XCTAssertFalse(app.descendants(matching: .any)["join.screen"].exists, "joined, the invite gone")
         XCTAssertFalse(app.descendants(matching: .any)["welcome.screen"].exists)
     }
+
+    // MARK: An auth email's link (#202)
+
+    /// Signed out, the sign-in link from the email: signed in, the welcome gone.
+    @MainActor func testAnEmailsLinkSignsIn() {
+        let app = launch(["-casyPageAuth", "YES", "-casyOpenLink", "/sign-in?lang=da&token_hash=t1&type=magiclink"])
+        XCTAssertTrue(app.staticTexts["home.title"].waitForExistence(timeout: 20), "home, signed in")
+        XCTAssertFalse(app.descendants(matching: .any)["welcome.screen"].exists)
+    }
+
+    /// A password reset's link: signed in, and on to the new password's form.
+    @MainActor func testAResetLinkOpensTheNewPasswordForm() {
+        let app = launch(["-casyPageAuth", "YES", "-casyOpenLink", "/sign-in?token_hash=t2&type=recovery"])
+        XCTAssertTrue(app.secureTextFields["security.newPassword"].waitForExistence(timeout: 20))
+    }
+
+    /// A link used already says so, in our words.
+    @MainActor func testAnExpiredLinkSaysSo() {
+        let app = launch(["-casyPageAuth", "YES", "-casyOpenLink", "/sign-in?token_hash=expired&type=magiclink"])
+        XCTAssertTrue(app.staticTexts["Linket er brugt eller udløbet. Bed om et nyt."].waitForExistence(timeout: 20))
+    }
 }

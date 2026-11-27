@@ -124,6 +124,7 @@ final class AppAuth: NSObject {
         case "user_already_exists", "email_exists": CasyStrings.authUserExists
         case "identity_already_exists": CasyStrings.authError("appleTaken")
         case "manual_linking_disabled": CasyStrings.authError("linkingOff")
+        case "otp_expired": CasyStrings.authError("linkExpired")
         case "network": CasyStrings.groupsLoadFailed
         default: error.message
         }

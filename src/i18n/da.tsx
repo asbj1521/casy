@@ -1023,6 +1023,8 @@ export const da = {
     codeInvalid: "Koden er forkert eller udløbet. Tjek mailen, eller få en ny kode.",
     appleTaken: "Det Apple-id hører allerede til en anden konto.",
     linkingOff: "Apple kan ikke tilføjes lige nu. Prøv igen senere.",
+    // An auth email's link already used, or too old (#202).
+    linkExpired: "Linket er brugt eller udløbet. Bed om et nyt.",
   },
   // Apple as a second way into the account (#245), under Log ind og sikkerhed.
   appleLink: {

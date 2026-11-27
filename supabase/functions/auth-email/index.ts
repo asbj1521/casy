@@ -32,6 +32,7 @@ import {
   type HookUser,
 } from "../_shared/authEmails.ts";
 import { requireEnv } from "../_shared/env.ts";
+import { allowedFrontends } from "../_shared/frontend.ts";
 import { sendEmail } from "../_shared/resend.ts";
 import { supabaseAdmin } from "../_shared/supabaseAdmin.ts";
 import { signedHeaders, verifyWebhook } from "../_shared/webhookSignature.ts";
@@ -74,7 +75,7 @@ Deno.serve(async (req) => {
     const { user, email_data } = JSON.parse(body) as { user: HookUser; email_data: EmailData };
     type = email_data.email_action_type;
 
-    const emails = renderAuthEmails(user, email_data, requireEnv("SUPABASE_URL"));
+    const emails = renderAuthEmails(user, email_data, allowedFrontends());
     if (emails.length === 0) throw new Error("no address to send to");
     // Each address's share of what anyone can ask for (#203), told in the
     // email's language: Auth passes the message to the page as it is.

@@ -69,6 +69,23 @@
         }
       }
     },
+    "authErrors.linkExpired": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Linket er brugt eller udløbet. Bed om et nyt."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That link has been used or has expired. Ask for a new one."
+          }
+        }
+      }
+    },
     "authErrors.linkingOff": {
       "extractionState": "manual",
       "localizations": {

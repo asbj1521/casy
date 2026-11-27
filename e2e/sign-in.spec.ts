@@ -94,3 +94,17 @@ test("in the app, the reset email's link opens casy.app's sign-in page (#242)", 
   await expect.poll(() => asked.length).toBe(1);
   expect(asked[0]).toMatch(/^https:\/\/casy\.app\/sign-in\?/);
 });
+
+test("an auth email's link signs in on the page itself, its token then gone (#202)", async ({
+  page,
+}) => {
+  await page.goto("/sign-in?lang=da&token_hash=t1&type=magiclink");
+  await expect(page).not.toHaveURL(/token_hash/);
+  await expect(page.getByLabel(/^E-mail/)).toHaveCount(0);
+});
+
+test("a link used already says so, in our words (#202)", async ({ page }) => {
+  await page.goto("/sign-in?token_hash=expired&type=magiclink");
+  await expect(page.getByText("Linket er brugt eller udløbet. Bed om et nyt.")).toBeVisible();
+  await expect(page).not.toHaveURL(/token_hash/);
+});

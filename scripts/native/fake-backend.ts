@@ -146,6 +146,13 @@ createServer((request, response) => {
     if (url.pathname === "/auth/v1/user") return send(200, user);
     if (url.pathname === "/auth/v1/logout") return send(204);
     if (url.pathname === "/auth/v1/token") return send(200, session());
+    // An auth email's link used (#202): "expired" is one used already, anything else signs Mia in.
+    if (url.pathname === "/auth/v1/verify") {
+      const { token_hash } = (text ? JSON.parse(text) : {}) as { token_hash?: string };
+      return token_hash === "expired"
+        ? send(403, { code: "otp_expired", msg: "Email link is invalid or has expired" })
+        : send(200, session());
+    }
     if (!name) return send(404, { error: "Not a function" });
     const body = text ? (JSON.parse(text) as Record<string, unknown>) : {};
     const answer = backend.answer({ name, params: url.searchParams, body });

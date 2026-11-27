@@ -19,6 +19,8 @@ public enum AppRoute: Equatable, Sendable {
     case friend(String)
     /// Indstillinger (`/profile/settings`, the admin's test notification).
     case settings
+    /// An auth email's link (#202, `/sign-in?token_hash=…&type=…`): the app signs in with it.
+    case emailLink(tokenHash: String, type: String)
     /// Profil on one of its screens, as ProfileStart names it: Grupper
     /// (`/groups`, "groups"), a group (`/groups/<id>`, "group:<id>"), an
     /// invitation waiting for you (`/invited/<id>`, "invitation:<id>").
@@ -35,6 +37,13 @@ public func appRoute(_ path: String) -> AppRoute? {
     case 0: return .home
     // The computer's QR code (#270): just the app.
     case 1 where parts[0] == "app": return .home
+    case 1 where parts[0] == "sign-in":
+        let query = path.split(separator: "?", maxSplits: 1).dropFirst().first.map(String.init) ?? ""
+        let items = URLComponents(string: "?" + query)?.queryItems ?? []
+        guard let hash = items.first(where: { $0.name == "token_hash" })?.value, !hash.isEmpty,
+            let type = items.first(where: { $0.name == "type" })?.value, !type.isEmpty
+        else { return nil }
+        return .emailLink(tokenHash: hash, type: type)
     case 1 where parts[0] == "events": return .events(nil)
     case 2 where parts[0] == "events": return .events(parts[1])
     case 2 where parts[0] == "join": return .join(parts[1])

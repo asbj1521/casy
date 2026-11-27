@@ -133,6 +133,13 @@ public struct AuthClient: Sendable {
                 "POST", "token", query: ["grant_type": "refresh_token"], body: ["refresh_token": refreshToken]))
     }
 
+    /// An auth email's link used (#202, `/sign-in?token_hash=…&type=…`): the login
+    /// it signs in with, or nil when it gives none (half of an email change).
+    public func verifyOtp(tokenHash: String, type: String) async throws -> AuthSession? {
+        let answer = try await send("POST", "verify", body: ["type": type, "token_hash": tokenHash])
+        return answer["access_token"] == nil ? nil : try Self.session(answer)
+    }
+
     // MARK: Emails
 
     /// A sign-in link to the address, making the account if there is none.

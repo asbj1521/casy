@@ -3,9 +3,18 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/auth-js";
 
 import { AuthContext, type AuthState } from "@/context/auth";
+import { authErrorMessage } from "@/i18n/authError";
+import { currentMessages } from "@/i18n/current";
+import { addressAfterLink, emailLinkIn } from "@/lib/emailLink";
 import { clearPersistedQueries } from "@/lib/queryPersistence";
 import { isNativeApp } from "@/lib/nativeApp";
 import { supabaseAuth } from "@/lib/supabase";
+
+/**
+ * An auth email's link this page was opened with (#202), used once: the
+ * effect below can run twice in development, and the token works only once.
+ */
+let emailLinkUsed = false;
 
 /**
  * Holds the current session and keeps it in step with Supabase.
@@ -21,6 +30,10 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [passwordRecovery, setPasswordRecovery] = useState(false);
+  // An auth email's link being checked: still loading, so nobody is sent to sign in meanwhile.
+  const [checkingLink, setCheckingLink] = useState(
+    () => !emailLinkUsed && emailLinkIn(window.location.search) !== null,
+  );
 
   useEffect(() => {
     const { data } = supabaseAuth.onAuthStateChange((event, next) => {
@@ -42,6 +55,20 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         if (isNativeApp) void import("@/lib/nativeBridge").then((m) => m.clearAppPhoneAi(null));
       }
     });
+    // An auth email's link (#202): signed in with its token, reported through the
+    // listener above (a password reset as PASSWORD_RECOVERY), the token then taken
+    // out of the address; a link that failed says why on the sign-in page.
+    const link = emailLinkUsed ? null : emailLinkIn(window.location.search);
+    if (link) {
+      emailLinkUsed = true;
+      void supabaseAuth
+        .verifyOtp({ token_hash: link.tokenHash, type: link.type })
+        .then(({ error }) => {
+          const reason = error ? authErrorMessage(error, currentMessages()) : undefined;
+          window.history.replaceState(null, "", addressAfterLink(window.location.href, reason));
+        })
+        .finally(() => setCheckingLink(false));
+    }
     return () => data.subscription.unsubscribe();
   }, [queryClient]);
 
@@ -49,7 +76,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       session,
       user: session?.user ?? null,
-      loading,
+      loading: loading || checkingLink,
       passwordRecovery,
       clearPasswordRecovery: () => setPasswordRecovery(false),
       signOut: async (scope = "local") => {
@@ -62,7 +89,7 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
         if (error) throw error;
       },
     }),
-    [session, loading, passwordRecovery],
+    [session, loading, checkingLink, passwordRecovery],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

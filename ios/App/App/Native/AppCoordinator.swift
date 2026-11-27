@@ -1,3 +1,4 @@
+import CasyAPI
 import CasyCore
 import CasyUI
 import SwiftUI
@@ -142,6 +143,8 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
         /// The UI tests' way in: a made-up login and a screen open at once.
         private func startTestLaunch() {
             guard let connection = TestLaunch.connection() else { return }
+            // `-casyOpenLink <address>`: a link tapped elsewhere (Mail), as iOS hands it over.
+            if let link = UserDefaults.standard.string(forKey: "casyOpenLink") { PushWork.shared.open(link) }
             // Every test starts on one day: the 1/2 day choice is kept on the phone,
             // and a test that left it on two would turn the next test's days by two.
             UserDefaults.standard.removeObject(forKey: "casy.daySpan")
@@ -840,6 +843,10 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
             return sheet("profile", ["start": start])
         case .settings:
             return sheet("settings", [:])
+        case .emailLink(let hash, let type):
+            // PushWork hands these over before routing; here only for completeness.
+            useEmailLink(hash, type)
+            return true
         }
     }
 
@@ -1030,6 +1037,8 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
                 self.showPageFree(signedIn: connection != nil)
             }
         }
+        PageFreeLinks.useEmailLink = { [weak self] hash, type in self?.useEmailLink(hash, type) }
+        if let link = PushWork.shared.takeEmailLink() { useEmailLink(link.hash, link.type) }
         PageFreeLinks.openSignedOut = { [weak self] path in
             guard let self, self.welcomeUp else { return false }
             return self.openInviteWithoutPage(path)
@@ -1088,6 +1097,38 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
             // closed as signed in, so an invite said yes to before is carried out.
             dismissOpenScreen(["signedIn": true])
         }
+    }
+
+    /// An auth email's link (#202): signed in with it, whatever is open (the login's arrival
+    /// puts the welcome away); a password reset then opens the new password's form. A link
+    /// used already, or too old, says so.
+    private func useEmailLink(_ tokenHash: String, _ type: String) {
+        Task { @MainActor in
+            guard let auth = AppSession.shared.auth else { return }
+            do {
+                if let session = try await auth.verifyOtp(tokenHash: tokenHash, type: type) {
+                    AppSession.shared.adopt(session)
+                }
+                if type == "recovery" {
+                    // Once the welcome has gone and the home page is there.
+                    try? await Task.sleep(for: .seconds(1))
+                    PushWork.shared.open("/profile/password?password=new")
+                }
+            } catch let error as AuthError {
+                linkFailed(AppAuth.words(error))
+            } catch {
+                linkFailed(CasyStrings.authError("linkExpired"))
+            }
+        }
+    }
+
+    /// Why an email's link didn't sign in, over whatever is on top (iOS's own alert).
+    private func linkFailed(_ words: String) {
+        var top = root
+        while let shown = top?.presentedViewController { top = shown }
+        let alert = UIAlertController(title: nil, message: words, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: CasyStrings.close, style: .cancel))
+        top?.present(alert, animated: true)
     }
 
     /// Without the page, signed out: the welcome is (or will be) what is under everything.

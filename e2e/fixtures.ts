@@ -45,6 +45,17 @@ async function routeSupabase(page: Page, backend: FakeBackend) {
       if (apple && backend.appleFails) return fulfil(422, backend.appleFails);
       return fulfil(200, session(apple ? backend.appleUser : null));
     }
+    // An auth email's link used (#202): "expired" is one used already, anything else signs in.
+    if (url.pathname === "/auth/v1/verify") {
+      const { token_hash } = (request.postDataJSON() ?? {}) as { token_hash?: string };
+      return token_hash === "expired"
+        ? fulfil(403, {
+            code: "otp_expired",
+            error_code: "otp_expired",
+            msg: "Email link is invalid or has expired",
+          })
+        : fulfil(200, session(null));
+    }
     backend.unknown.push(`${request.method()} ${url.pathname}`);
     return fulfil(404, { error: "not in the test backend" });
   });

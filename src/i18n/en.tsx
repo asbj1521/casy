@@ -975,6 +975,7 @@ export const en: Messages = {
     userExists: "There is already an account with that email.",
     appleTaken: "That Apple ID already belongs to another account.",
     linkingOff: "Apple can't be added right now. Try again later.",
+    linkExpired: "That link has been used or has expired. Ask for a new one.",
   },
   // Apple as a second way into the account (#245), under Sign-in and security.
   appleLink: {

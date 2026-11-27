@@ -21,6 +21,8 @@ enum PageFree {
 @MainActor
 enum PageFreeLinks {
     static var openSignedOut: ((String) -> Bool)?
+    /// An auth email's link (#202): the coordinator signs in with it, whatever is open.
+    static var useEmailLink: ((_ tokenHash: String, _ type: String) -> Void)?
 }
 
 /// The login kept in the Keychain, on this phone only, readable once it has been unlocked.

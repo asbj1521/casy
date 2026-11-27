@@ -40,6 +40,15 @@ final class PushWork: NSObject {
     private var homeSettled = false
     private var waitingPath: String?
 
+    /// An auth email's link that launched the app, before the coordinator could take it.
+    private var waitingEmailLink: (hash: String, type: String)?
+
+    /// That link, taken.
+    func takeEmailLink() -> (hash: String, type: String)? {
+        defer { waitingEmailLink = nil }
+        return waitingEmailLink
+    }
+
     /// The address waiting for the home page, taken (signed out, it never comes).
     func takeWaiting() -> String? {
         defer { waitingPath = nil }
@@ -196,6 +205,11 @@ final class PushWork: NSObject {
         #if DEBUG
             NSLog("PushWork: tap to %@", path)
         #endif
+        // An auth email's link (#202): signed in with, whatever is open; kept until the app can.
+        if case .emailLink(let hash, let type) = appRoute(path) {
+            if let use = PageFreeLinks.useEmailLink { use(hash, type) } else { waitingEmailLink = (hash, type) }
+            return tested(path, "signing in")
+        }
         if openHere(path) { return tested(path, "opened") }
         // Without the page, signed out: an invite's own screen over the welcome (#202).
         if PageFreeLinks.openSignedOut?(path) == true { return tested(path, "opened signed out") }

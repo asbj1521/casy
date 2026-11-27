@@ -524,6 +524,7 @@ const WEB: Record<string, (t: Messages) => string> = {
   "authErrors.codeInvalid": (t) => t.authErrors.codeInvalid,
   "authErrors.appleTaken": (t) => t.authErrors.appleTaken,
   "authErrors.linkingOff": (t) => t.authErrors.linkingOff,
+  "authErrors.linkExpired": (t) => t.authErrors.linkExpired,
   "clash.when.same": (t) => t.importantClash.when(0),
   "clash.when.next": (t) => t.importantClash.when(1),
   "clash.when.days": (t) => t.importantClash.when(7).replace("7", "%d"),

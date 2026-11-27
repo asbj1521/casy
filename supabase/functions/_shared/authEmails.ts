@@ -61,18 +61,34 @@ export function emailLang(user: HookUser, data: EmailData): Lang {
 }
 
 /**
- * The one-time link, exactly as Supabase builds its own ConfirmationURL:
- * Auth's verify endpoint, which checks the token and then sends the browser
- * on to `redirect_to`.
+ * The one-time link (#202): straight to our own sign-in page with the token's
+ * hash, `/sign-in?token_hash=…&type=…`, which checks it itself (verifyOtp),
+ * rather than through Auth's verify endpoint and a redirect. On an iPhone with
+ * the app, casy.app hands exactly these addresses to the app
+ * (apple-app-site-association), which signs in with them; anywhere else the
+ * website does. The page asked to return to (`redirect_to`) keeps its
+ * language and where to go next, but only on one of our own sites
+ * (FRONTEND_ORIGINS, default first): the hash signs whoever holds it in.
  */
-export function verifyUrl(
-  supabaseUrl: string,
+export function emailLinkUrl(
   tokenHash: string,
   type: string,
   redirectTo: string,
+  allowed: string[],
 ): string {
-  const params = new URLSearchParams({ token: tokenHash, type, redirect_to: redirectTo });
-  return `${supabaseUrl.replace(/\/$/, "")}/auth/v1/verify?${params}`;
+  const fallback = () => new URL("/sign-in", allowed[0]);
+  let url: URL;
+  try {
+    url = new URL(redirectTo);
+  } catch {
+    url = fallback();
+  }
+  if (!allowed.includes(url.origin)) url = fallback();
+  url.pathname = "/sign-in";
+  url.hash = "";
+  url.searchParams.set("token_hash", tokenHash);
+  url.searchParams.set("type", type);
+  return url.toString();
 }
 
 // ---------------------------------------------------------------------------
@@ -446,7 +462,7 @@ function text(lang: Lang, w: Words, link: string | null, code: string | null): s
 export function renderAuthEmails(
   user: HookUser,
   data: EmailData,
-  supabaseUrl: string,
+  allowedOrigins: string[],
 ): AuthEmail[] {
   const lang = emailLang(user, data);
   const type = data.email_action_type;
@@ -464,7 +480,7 @@ export function renderAuthEmails(
         ]
       : [];
   const linkFor = (hash: string | undefined) =>
-    hash ? verifyUrl(supabaseUrl, hash, type, redirectTo) : null;
+    hash ? emailLinkUrl(hash, type, redirectTo, allowedOrigins) : null;
 
   switch (type) {
     case "signup":
