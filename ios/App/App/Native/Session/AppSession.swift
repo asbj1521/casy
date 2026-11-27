@@ -15,14 +15,9 @@ import UIKit
 enum PageFree {
     private static let key = "casy.pageFree"
 
-    /// Always, but in a UI test that still plays the page's part itself (#202):
-    /// there, only with `-casy.pageFree YES`.
-    static var on: Bool {
-        #if DEBUG
-            if TestLaunch.isActive { return UserDefaults.standard.bool(forKey: key) }
-        #endif
-        return true
-    }
+    /// Always (#202): the app has no page. A UI test's made-up login stands in for
+    /// the app's own (TestLaunch); signed out (`-casyPageAuth YES`) it is the app's.
+    static var on: Bool { true }
 }
 
 /// Without the page and signed out (#202): an invite's or a friend link's
@@ -139,14 +134,12 @@ final class AppSession {
             MainActor.assumeIsolated { AppSession.shared.schedule() }
         }
         #if DEBUG
-            // `-casyForgetLogin YES`: a test starts with no login of the app's own, the page not yet looked at.
-            if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyForgetLogin") {
+            // A signed-out test starts with no login of the app's own and leaves the page's
+            // storage alone, unless it asks for it read (`-casyReadPage YES`) or seeds it first.
+            if TestLaunch.isActive {
                 SessionKeychain.delete()
-                UserDefaults.standard.removeObject(forKey: Self.pageLookedKey)
-            }
-            // `-casyPageLooked YES`: what other tests left in the page's storage is not taken.
-            if TestLaunch.isActive, UserDefaults.standard.bool(forKey: "casyPageLooked") {
-                UserDefaults.standard.set(true, forKey: Self.pageLookedKey)
+                let read = UserDefaults.standard.bool(forKey: "casyReadPage")
+                UserDefaults.standard.set(!read, forKey: Self.pageLookedKey)
             }
         #endif
         if let kept = SessionKeychain.load() {
@@ -156,6 +149,15 @@ final class AppSession {
         // The page looked at once: whatever it had is the app's since.
         guard !UserDefaults.standard.bool(forKey: Self.pageLookedKey) else { return changed(nil) }
         Task {
+            #if DEBUG
+                // `-casySeedPage <base64 JSON>`: what the page would have kept, put in its storage first.
+                if TestLaunch.isActive, let seed = UserDefaults.standard.string(forKey: "casySeedPage"),
+                    let data = Data(base64Encoded: seed),
+                    let values = try? JSONSerialization.jsonObject(with: data) as? [String: String]
+                {
+                    await PageLogin.seed(values)
+                }
+            #endif
             guard let stored = await PageLogin.take() else { return changed(nil) }
             UserDefaults.standard.set(true, forKey: Self.pageLookedKey)
             // What the page kept goes first, so the login's arrival finds it (the phone's connection).

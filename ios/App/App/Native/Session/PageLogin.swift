@@ -29,6 +29,16 @@ final class PageLogin: NSObject {
         return Stored(login: login, values: values)
     }
 
+    #if DEBUG
+        /// A UI test's stand-in for what the page kept: written into its storage.
+        static func seed(_ values: [String: String]) async {
+            let reader = PageLogin()
+            _ = await reader.run(
+                "for (const [k, v] of Object.entries(values)) localStorage.setItem(k, v); return {};",
+                ["values": values])
+        }
+    #endif
+
     /// The page's key; in a UI test, that of the fake backend's web build.
     private static var storageKey: String? {
         #if DEBUG
@@ -43,6 +53,21 @@ final class PageLogin: NSObject {
     private var loaded: CheckedContinuation<Bool, Never>?
 
     private func read(_ key: String) async -> [String: String]? {
+        // Every value but the remembered queries (casy:query:, large and fetched again anyway).
+        let script = """
+            const all = {};
+            for (let i = 0; i < localStorage.length; i++) {
+              const name = localStorage.key(i);
+              if (name && !name.startsWith("casy:query:")) all[name] = localStorage.getItem(name);
+            }
+            localStorage.removeItem(key);
+            return all;
+            """
+        return await run(script, ["key": key])
+    }
+
+    /// `script` run in a blank page at the page's address, its answer as text by name.
+    private func run(_ script: String, _ arguments: [String: Any]) async -> [String: String]? {
         let configuration = WKWebViewConfiguration()
         configuration.websiteDataStore = .default()
         configuration.setURLSchemeHandler(BlankPage(), forURLScheme: Self.origin.scheme!)
@@ -63,17 +88,7 @@ final class PageLogin: NSObject {
             }
         }
         guard opened else { return nil }
-        // Every value but the remembered queries (casy:query:, large and fetched again anyway).
-        let script = """
-            const all = {};
-            for (let i = 0; i < localStorage.length; i++) {
-              const name = localStorage.key(i);
-              if (name && !name.startsWith("casy:query:")) all[name] = localStorage.getItem(name);
-            }
-            localStorage.removeItem(key);
-            return all;
-            """
-        let value = try? await view.callAsyncJavaScript(script, arguments: ["key": key], contentWorld: .page)
+        let value = try? await view.callAsyncJavaScript(script, arguments: arguments, contentWorld: .page)
         guard let object = value as? [String: Any] else { return nil }
         return object.compactMapValues { $0 as? String }
     }

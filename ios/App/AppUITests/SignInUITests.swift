@@ -4,8 +4,12 @@ import XCTest
 /// (`TestLaunch.authAnswer`): "forkert1" is a wrong password, "password1" a
 /// leaked one, a new account waits for its email, and links are sent.
 final class SignInUITests: XCTestCase {
-    override func setUp() {
+    override func setUp() async throws {
         continueAfterFailure = false
+        // The world as it was: a test before may have left it saying the app is too old.
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
+        reset.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: reset)
     }
 
     private func launch() -> XCUIApplication {

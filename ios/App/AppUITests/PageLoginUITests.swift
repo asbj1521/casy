@@ -20,20 +20,14 @@ final class PageLoginUITests: XCTestCase {
     }
 
     @MainActor func testThePagesLoginIsTakenOverOnce() async throws {
-        // 1. With its page: Mia's login in the page's storage, as auth-js keeps it.
+        // 1. Mia's login in the page's storage, as auth-js kept it, and her phone's connection:
+        // the page's storage read at the first launch without a login of the app's own.
         let session = try await URLSession.shared.data(from: URL(string: "\(testBackend)/parity/session")!).0
         var app = launch([
-            "-casy.pageFree", "NO", "-casyForgetLogin", "YES",
+            "-casyPageAuth", "YES", "-casyReadPage", "YES",
             // Base64: iOS reads a launch argument starting with "{" as a dictionary.
-            "-casyWebSession", session.base64EncodedString(),
+            "-casySeedPage", session.base64EncodedString(),
         ])
-        // Time for the page to run and its storage to reach the disk.
-        _ = app.webViews.firstMatch.waitForExistence(timeout: 20)
-        Thread.sleep(forTimeInterval: 4)
-        app.terminate()
-
-        // 2. Without the page and no login of the app's own: the page's is taken, no welcome.
-        app = launch(["-casy.pageFree", "YES", "-casyForgetLogin", "YES"])
         let welcome = app.descendants(matching: .any)["welcome.screen"]
         XCTAssertFalse(welcome.waitForExistence(timeout: 8), "signed in with the page's login")
         // And what the page kept with it: this phone's calendar connection, not asked for again.
@@ -42,8 +36,8 @@ final class PageLoginUITests: XCTestCase {
         XCTAssertEqual(carried.label, "carried phone conn-apple")
         app.terminate()
 
-        // 3. The app's login forgotten again: the page's was removed as it was taken.
-        app = launch(["-casy.pageFree", "YES", "-casyForgetLogin", "YES"])
+        // 2. The app's login forgotten again: the page's was removed as it was taken.
+        app = launch(["-casyPageAuth", "YES", "-casyReadPage", "YES"])
         XCTAssertTrue(welcome.waitForExistence(timeout: 15), "nothing left in the page to take")
         app.terminate()
     }
@@ -54,7 +48,7 @@ final class PageLoginUITests: XCTestCase {
         reset.httpMethod = "POST"
         reset.httpBody = Data(#"{"outdated":true}"#.utf8)
         _ = try await URLSession.shared.data(for: reset)
-        let app = launch(["-casy.pageFree", "YES"])
+        let app = launch(["-casyPageAuth", "YES"])
         XCTAssertTrue(app.descendants(matching: .any)["update.screen"].waitForExistence(timeout: 20))
         app.terminate()
     }
@@ -63,7 +57,7 @@ final class PageLoginUITests: XCTestCase {
     /// `?join=1`): the account first, then the invite joins by itself.
     @MainActor func testAnInviteSaidYesToBeforeTheAccountJoinsAfterSigningIn() {
         let app = launch([
-            "-casy.pageFree", "YES", "-casyForgetLogin", "YES", "-casyPageLooked", "YES",
+            "-casyPageAuth", "YES",
             "-casyCopied", "Kom med: https://casy.app/join/abc123",
         ])
         let paste = app.buttons["welcome.paste"]

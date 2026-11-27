@@ -1516,6 +1516,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             guard let self, self.welcomeUp else { return false }
             return self.openInviteWithoutPage(path)
         }
+        #if DEBUG
+            // A test's made-up login is signed in already (startTestLaunch); only a signed-out
+            // test (`-casyPageAuth YES`) has the app's own login, or none and the welcome.
+            if TestLaunch.isActive, !TestLaunch.pageAuth {
+                UpdateCheck.shared.show = { [weak self] store in self?.showUpdate(store) }
+                UpdateCheck.shared.start()
+                return
+            }
+        #endif
         AppSession.shared.start()
         UpdateCheck.shared.show = { [weak self] store in self?.showUpdate(store) }
         UpdateCheck.shared.start()
