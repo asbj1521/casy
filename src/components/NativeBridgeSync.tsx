@@ -23,6 +23,7 @@ import {
   onNativeAuthAsk,
   onNeedSession,
   sharePreferences,
+  onAppTakesSession,
 } from "@/lib/nativeBridge";
 import { answerNativeAuth } from "@/lib/nativeAuth";
 import { afterAiConsent } from "@/hooks/useAiConsentSetting";
@@ -37,7 +38,7 @@ import {
   rememberPhoneConnection,
 } from "@/lib/phoneCalendar";
 import { enablePush } from "@/lib/push";
-import { supabaseAuth } from "@/lib/supabase";
+import { authOptions, supabaseAuth } from "@/lib/supabase";
 import { chooseTheme, onThemeChange, storedTheme } from "@/lib/theme";
 
 /**
@@ -234,6 +235,31 @@ export default function NativeBridgeSync() {
         else handle = h;
       })
       .catch((err) => console.warn("listening for the app's login failed", err));
+    return () => {
+      gone = true;
+      void handle?.remove();
+    };
+  }, []);
+
+  // The app taking the login over (#202, Debug): the page stops refreshing and forgets it.
+  useEffect(() => {
+    let handle: { remove: () => Promise<void> } | undefined;
+    let gone = false;
+    onAppTakesSession(async () => {
+      await supabaseAuth.stopAutoRefresh();
+      const key = authOptions(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+      ).storageKey;
+      const session = localStorage.getItem(key);
+      localStorage.removeItem(key);
+      return session;
+    })
+      .then((h) => {
+        if (gone) void h.remove();
+        else handle = h;
+      })
+      .catch(() => {});
     return () => {
       gone = true;
       void handle?.remove();

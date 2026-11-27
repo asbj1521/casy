@@ -154,6 +154,11 @@ public struct AuthClient: Sendable {
         try Self.user(try await send("GET", "user", token: accessToken))
     }
 
+    /// The user as Supabase writes it, every field kept: for handing a login back to auth-js.
+    public func userJSON(accessToken: String) async throws -> Data {
+        try JSONSerialization.data(withJSONObject: try await send("GET", "user", token: accessToken))
+    }
+
     /// A new password; `code` the one Supabase emailed when it asked for it (`reauthentication_needed`).
     public func setPassword(_ password: String, code: String?, accessToken: String) async throws {
         var body: [String: Any] = ["password": password]

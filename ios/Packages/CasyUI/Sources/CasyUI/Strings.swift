@@ -862,6 +862,8 @@ public enum CasyStrings {
     public static var joinPreviewFailed: String { text("join.previewFailed") }
     public static var joinJoinFailed: String { text("join.joinFailed") }
     public static var authUserExists: String { text("authErrors.userExists") }
+    /// Supabase Auth's errors in the app's words (#202, the web's authError.ts).
+    public static func authError(_ key: String) -> String { text("authErrors.\(key)") }
     public static var pileChange: String { text("pile.change") }
     public static var pileClose: String { text("pile.close") }
     public static func pileDetails(_ date: String) -> String { String(format: text("pile.details"), date) }
@@ -968,6 +970,8 @@ public enum CasyStrings {
     public static func dayShowMonth(_ month: String) -> String { format("swipe.showMonth", month) }
     public static var adminNativeHome: String { text("admin.nativeHome") }
     public static var adminNativeHomeDetail: String { text("admin.nativeHomeDetail") }
+    public static var adminPageFree: String { text("admin.pageFree") }
+    public static var adminPageFreeDetail: String { text("admin.pageFreeDetail") }
     public static var calendarsListTitle: String { text("calendarView.listTitle") }
     public static var calendarsListIntro: String { text("calendarView.listIntro") }
     public static var calendarsHelpLabel: String { text("calendarView.priorityHelpLabel") }

@@ -8,8 +8,30 @@ class MainViewController: CAPBridgeViewController {
     /// Takes the tap at the very top of the screen (#168), laid over the strip behind the clock.
     private let statusTapCatcher = StatusTapCatcher()
 
+    /// Without its page (#202, Debug): Capacitor's load is stopped before the
+    /// page's first line runs, and an empty page put in its place.
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        if PageFree.on {
+            webView?.stopLoading()
+            webView?.loadHTMLString("<html><body></body></html>", baseURL: nil)
+        }
+    }
+
     override func capacitorDidLoad() {
         super.capacitorDidLoad()
+        // The app's login handed back as "Uden side" went off (#202): into the
+        // page's storage before its first line runs, so auth-js finds it as its own.
+        if !PageFree.on, let json = UserDefaults.standard.string(forKey: PageFree.handBackKey),
+           let endpoint = ProjectEndpoint.current,
+           let ref = endpoint.url.host?.split(separator: ".").first,
+           let literal = try? JSONEncoder().encode(json), let quoted = String(data: literal, encoding: .utf8) {
+            webView?.configuration.userContentController.addUserScript(
+                WKUserScript(
+                    source: "try { localStorage.setItem('sb-\(ref)-auth-token', \(quoted)) } catch (e) {}",
+                    injectionTime: .atDocumentStart, forMainFrameOnly: true))
+            UserDefaults.standard.removeObject(forKey: PageFree.handBackKey)
+        }
         // The theme chosen in Casy's Settings (#129), before anything is drawn;
         // without one, the phone's own.
         overrideUserInterfaceStyle = AppAppearance.stored()

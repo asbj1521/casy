@@ -516,6 +516,14 @@ const WEB: Record<string, (t: Messages) => string> = {
   "join.previewFailed": (t) => t.api.preview,
   "join.joinFailed": (t) => t.api.joinGroup,
   "authErrors.userExists": (t) => t.authErrors.userExists,
+  "authErrors.invalidCredentials": (t) => t.authErrors.invalidCredentials,
+  "authErrors.weakPassword": (t) => t.authErrors.weakPassword,
+  "authErrors.samePassword": (t) => t.authErrors.samePassword,
+  "authErrors.rateLimit": (t) => t.authErrors.rateLimit,
+  "authErrors.emailNotConfirmed": (t) => t.authErrors.emailNotConfirmed,
+  "authErrors.codeInvalid": (t) => t.authErrors.codeInvalid,
+  "authErrors.appleTaken": (t) => t.authErrors.appleTaken,
+  "authErrors.linkingOff": (t) => t.authErrors.linkingOff,
   "clash.when.same": (t) => t.importantClash.when(0),
   "clash.when.next": (t) => t.importantClash.when(1),
   "clash.when.days": (t) => t.importantClash.when(7).replace("7", "%d"),
@@ -1283,6 +1291,11 @@ const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
   "admin.nativeHomeDetail": {
     da: "Forsiden tegnet i Swift, kun på denne telefon",
     en: "The home page drawn in Swift, on this phone only",
+  },
+  "admin.pageFree": { da: "Uden side", en: "Without the page" },
+  "admin.pageFreeDetail": {
+    da: "Appen logger selv ind og åbner ikke websiden. Den lukker, når du skifter, så åbn den igen.",
+    en: "The app signs in itself and doesn't open the website. It closes when you switch, so open it again.",
   },
 };
 

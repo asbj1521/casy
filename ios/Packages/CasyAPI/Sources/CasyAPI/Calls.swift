@@ -38,6 +38,11 @@ private struct PushToken: Encodable, Sendable {
     let lang: String?
 }
 
+private struct AppleToken: Encodable, Sendable {
+    let action = "apple-token"
+    let code: String
+}
+
 private struct SetName: Encodable, Sendable {
     let action = "set-name"
     let name: String
@@ -572,6 +577,11 @@ extension EdgeFunctions {
     public func unregisterPushToken(_ token: String, errorMessage: String? = nil) async throws {
         let _: Ignored = try await call(
             "account", body: PushToken(action: "push-unregister", token: token, lang: nil), errorMessage: errorMessage)
+    }
+
+    /// Apple's authorization code kept, so the sign-in can be revoked with the account (#138).
+    public func saveAppleSignIn(_ code: String, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call("account", body: AppleToken(code: code), errorMessage: errorMessage)
     }
 
     public func pushSettings(errorMessage: String? = nil) async throws -> PushSettings {

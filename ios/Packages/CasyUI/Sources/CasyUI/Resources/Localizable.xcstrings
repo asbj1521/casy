@@ -1,6 +1,176 @@
 {
   "sourceLanguage": "da",
   "strings": {
+    "admin.pageFree": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uden side"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Without the page"
+          }
+        }
+      }
+    },
+    "admin.pageFreeDetail": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appen logger selv ind og åbner ikke websiden. Den lukker, når du skifter, så åbn den igen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app signs in itself and doesn't open the website. It closes when you switch, so open it again."
+          }
+        }
+      }
+    },
+    "authErrors.appleTaken": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Det Apple-id hører allerede til en anden konto."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That Apple ID already belongs to another account."
+          }
+        }
+      }
+    },
+    "authErrors.codeInvalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Koden er forkert eller udløbet. Tjek mailen, eller få en ny kode."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That code is wrong or has expired. Check the email, or get a new code."
+          }
+        }
+      }
+    },
+    "authErrors.emailNotConfirmed": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bekræft din e-mail først. Tjek din indbakke."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Confirm your email first. Check your inbox."
+          }
+        }
+      }
+    },
+    "authErrors.invalidCredentials": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Forkert e-mail eller adgangskode."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wrong email or password."
+          }
+        }
+      }
+    },
+    "authErrors.linkingOff": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple kan ikke tilføjes lige nu. Prøv igen senere."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apple can't be added right now. Try again later."
+          }
+        }
+      }
+    },
+    "authErrors.rateLimit": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "For mange forsøg. Vent lidt, og prøv igen."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Too many attempts. Wait a little and try again."
+          }
+        }
+      }
+    },
+    "authErrors.samePassword": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Den nye adgangskode skal være en anden end den gamle."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The new password must be different from the old one."
+          }
+        }
+      }
+    },
+    "authErrors.weakPassword": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adgangskoden er for svag. Brug mindst 8 tegn med både bogstaver og tal."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "That password is too weak. Use at least 8 characters with both letters and numbers."
+          }
+        }
+      }
+    },
     "common.cancel": {
       "extractionState": "manual",
       "localizations": {

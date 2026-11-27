@@ -13,6 +13,8 @@ enum NativeHome {
             #if DEBUG
                 if TestLaunch.isActive, TestLaunch.webOnly { return false }
                 if TestLaunch.isActive, TestLaunch.nativeHome { return true }
+                // Without its page the app's home is the only one (#202).
+                if PageFree.on { return true }
                 return UserDefaults.standard.bool(forKey: key)
             #else
                 return false

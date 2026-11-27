@@ -223,6 +223,7 @@ interface NativeBridgePlugin {
   openPath(options: { path: string }): Promise<{ opened: boolean }>;
   askPush(options: { reason: string }): Promise<void>;
   forgetPush(): Promise<void>;
+  sessionHandedOver(options: { session?: string }): Promise<void>;
   enablePushInApp(): Promise<{ answer: "granted" | "denied" | "failed" }>;
   asksFromPage(options: {
     pushAsked: number;
@@ -233,6 +234,7 @@ interface NativeBridgePlugin {
     event: "leave",
     listener: (closed: NativeClosed) => void,
   ): Promise<PluginListenerHandle>;
+  addListener(event: "handOverSession", listener: () => void): Promise<PluginListenerHandle>;
   addListener(
     event: "openPage",
     listener: (event: { path: string }) => void,
@@ -558,6 +560,20 @@ export async function forgetPushInApp(): Promise<void> {
 export async function enablePushInApp(): Promise<"granted" | "denied" | "failed"> {
   const { plugin } = await bridgePlugin();
   return (await plugin.enablePushInApp()).answer;
+}
+
+/**
+ * The app going on without its page (#202, Admin's "Uden side", Debug): the
+ * page's stored login handed over and forgotten here, never refreshed again,
+ * so the app is its one owner (`give` reads and clears it).
+ */
+export async function onAppTakesSession(
+  give: () => Promise<string | null>,
+): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("handOverSession", () => {
+    void give().then((session) => plugin.sessionHandedOver({ session: session ?? undefined }));
+  });
 }
 
 /** A notification's address the app couldn't show itself (#202): the page goes there. */

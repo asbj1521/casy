@@ -34,6 +34,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "openPath", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "askPush", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "forgetPush", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "sessionHandedOver", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "enablePushInApp", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "asksFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
@@ -241,6 +242,16 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 MainActor.assumeIsolated { self?.placeHome() }
             }
         }
+        // Without its page (#202): once the controller is on screen, the app's own login and home.
+        if PageFree.on {
+            PageFreeSwitch.run = { [weak self] on in await self?.switchPageFree(on) ?? false }
+            Task { @MainActor [weak self] in
+                while self?.bridge?.viewController?.view.window == nil { try? await Task.sleep(for: .milliseconds(50)) }
+                self?.startPageFree()
+            }
+        } else {
+            PageFreeSwitch.run = { [weak self] on in await self?.switchPageFree(on) ?? false }
+        }
         #if DEBUG
             startTestLaunch()
         #endif
@@ -332,38 +343,48 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
         let phone = call.getString("phoneConnection")
         let device = call.getString("deviceId")
+        if let url = call.getString("projectUrl").flatMap(URL.init(string:)), let apiKey = call.getString("apiKey") {
+            // Kept for the app without its page (#202), which signs in by itself.
+            ProjectEndpoint.remember(url, apiKey: apiKey)
+        }
         Task {
-            let before = await SessionBox.shared.current()?.userId
-            await SessionBox.shared.set(next)
-            await MainActor.run {
-                HomeModel.shared.signedIn(next?.userId)
-                if PhoneSyncWork.on {
-                    // The app keeps the phone's id and connection, the page's taken over once.
-                    PhoneSyncWork.shared.signedIn(next?.userId, pageDevice: device, pageConnection: phone)
-                } else {
-                    LabelsWork.shared.thisPhone = phone
-                }
-                LabelsWork.shared.signedIn(next?.userId)
-                CategorizeWork.shared.signedIn(next?.userId)
-                LivePulse.shared.signedIn(next?.userId)
-                PushWork.shared.takeTaps(from: self.bridge)
-                PushWork.shared.signedIn(next?.userId)
-            }
-            // Someone else on this phone must never see the last person's choices.
-            if before != next?.userId {
-                await MainActor.run {
-                    NotificationsModel.shared.reset()
-                    ProfileModel.shared.reset()
-                    GroupsModel.shared.reset()
-                    MyDataModel.shared.reset()
-                    AdminModel.shared.reset()
-                    AdminReviewsModel.shared.reset()
-                    EventsModel.shared.reset()
-                    CalendarsModel.shared.reset()
-                    HomeModel.shared.reset()
-                }
-            }
+            await apply(next, phone: phone, device: device)
             call.resolve()
+        }
+    }
+
+    /// A login (or none) passed on to every part of the app: the page's
+    /// (`setSession`) or, without the page, the app's own (`AppSession`).
+    private func apply(_ next: SessionBox.Connection?, phone: String? = nil, device: String? = nil) async {
+        let before = await SessionBox.shared.current()?.userId
+        await SessionBox.shared.set(next)
+        await MainActor.run {
+            HomeModel.shared.signedIn(next?.userId)
+            if PhoneSyncWork.on {
+                // The app keeps the phone's id and connection, the page's taken over once.
+                PhoneSyncWork.shared.signedIn(next?.userId, pageDevice: device, pageConnection: phone)
+            } else {
+                LabelsWork.shared.thisPhone = phone
+            }
+            LabelsWork.shared.signedIn(next?.userId)
+            CategorizeWork.shared.signedIn(next?.userId)
+            LivePulse.shared.signedIn(next?.userId)
+            PushWork.shared.takeTaps(from: self.bridge)
+            PushWork.shared.signedIn(next?.userId)
+        }
+        // Someone else on this phone must never see the last person's choices.
+        if before != next?.userId {
+            await MainActor.run {
+                NotificationsModel.shared.reset()
+                ProfileModel.shared.reset()
+                GroupsModel.shared.reset()
+                MyDataModel.shared.reset()
+                AdminModel.shared.reset()
+                AdminReviewsModel.shared.reset()
+                EventsModel.shared.reset()
+                CalendarsModel.shared.reset()
+                HomeModel.shared.reset()
+            }
         }
     }
 
@@ -1151,7 +1172,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         finishPush("failed")
         guard let screen = openScreen else { return }
         openScreen = nil
-        let here = openedHere
+        let here = openedHere || PageFree.on
         openedHere = false
         if here {
             closedHere(screen, then)
@@ -1357,7 +1378,117 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
         }
         if then.isEmpty { return }
+        if PageFree.on { return pageFreeLeave(then) }
         notifyListeners("leave", data: then.merging(["screen": screen]) { $1 })
+    }
+
+    // MARK: Without the page (#202)
+
+    /// What a sheet closed with that the page would have done, done by the app;
+    /// what it can't do yet is logged, the page's last jobs found that way.
+    private func pageFreeLeave(_ then: [String: Any]) {
+        if then["signOut"] as? Bool == true {
+            Task { _ = await AppSession.shared.signOut() }
+        } else if then["accountDeleted"] as? Bool == true {
+            AppSession.shared.forget()
+        } else if then["joined"] as? Bool == true {
+            Asks.shared.push("joined")
+        } else if then["sent"] != nil {
+            Asks.shared.push("sent")
+        } else if then["signedIn"] as? Bool == true {
+            // AppSession has it already.
+        } else {
+            NSLog("PageFree: the page would have done %@", "\(then)")
+        }
+    }
+
+    /// The app on its own: no page loaded (MainViewController), the login the
+    /// app's (AppSession), the native home always on, the welcome when signed out.
+    @MainActor private func startPageFree() {
+        if let endpoint = ProjectEndpoint.current {
+            Task { await SessionBox.shared.setEndpoint(endpoint.url, apiKey: endpoint.apiKey) }
+        }
+        // A call that finds the login stale asks the app for a fresh one, not the page.
+        Task {
+            await SessionBox.shared.setAskWeb {
+                Task { @MainActor in _ = await AppSession.shared.refresh() }
+            }
+        }
+        PageAuth.shared.send = nil
+        AppSession.shared.changed = { [weak self] session in
+            guard let self else { return }
+            let connection = session.flatMap { s in
+                ProjectEndpoint.current.map {
+                    SessionBox.Connection(
+                        projectURL: $0.url, apiKey: $0.apiKey, accessToken: s.accessToken, expiresAt: s.expiresAt,
+                        userId: s.user.id, email: s.user.email)
+                }
+            }
+            let userBefore = HomeModel.shared.page.shown
+            Task { @MainActor in
+                let wasSomeone = await SessionBox.shared.current()?.userId
+                if wasSomeone != connection?.userId || connection == nil || !userBefore {
+                    await self.apply(connection)
+                } else {
+                    // Only refreshed: the same person, a new token.
+                    await SessionBox.shared.set(connection)
+                }
+                self.showPageFree(signedIn: connection != nil)
+            }
+        }
+        AppSession.shared.start()
+    }
+
+    /// Signed in, the app's home page; signed out, the welcome over everything.
+    @MainActor private func showPageFree(signedIn: Bool) {
+        var page = HomeModel.shared.page
+        page.shown = signedIn
+        page.covered = false
+        if page != HomeModel.shared.page { HomeModel.shared.update(page) }
+        placeHome()
+        guard let presenter = bridge?.viewController else { return }
+        if !signedIn {
+            if openScreen == nil {
+                present("welcome", on: presenter, build: pageBuild, userAgent: pageUserAgent)
+            }
+        } else if openScreen == "welcome" || openScreen == "signIn" {
+            dismissOpenScreen()
+        }
+    }
+
+    // MARK: Handing the login between the page and the app (#202, Debug)
+
+    /// `{ session }`: the page's stored login (auth-js's JSON), handed over as
+    /// the app goes page-free; the page has forgotten it already.
+    @objc func sessionHandedOver(_ call: CAPPluginCall) {
+        let json = call.getString("session")
+        DispatchQueue.main.async {
+            self.handOverWaiter?(json)
+            self.handOverWaiter = nil
+            call.resolve()
+        }
+    }
+
+    private var handOverWaiter: ((String?) -> Void)?
+
+    /// Admin's "Uden side" (Debug): on takes the page's login and opens the app
+    /// without its page; off gives the app's login back to the page. Either way the app
+    /// closes, to open again the other way.
+    @MainActor func switchPageFree(_ on: Bool) async -> Bool {
+        if on {
+            let json: String? = await withCheckedContinuation { waiter in
+                handOverWaiter = { waiter.resume(returning: $0) }
+                notifyListeners("handOverSession", data: [:])
+            }
+            guard let json, AppSession.shared.takeOver(pageJSON: json) else { return false }
+            PageFree.set(true)
+        } else {
+            if let json = await AppSession.shared.handBack() {
+                UserDefaults.standard.set(json, forKey: PageFree.handBackKey)
+            }
+            PageFree.set(false)
+        }
+        exit(0)
     }
 }
 

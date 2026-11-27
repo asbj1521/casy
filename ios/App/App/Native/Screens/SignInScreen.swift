@@ -40,6 +40,10 @@ final class PageAuth {
                 return TestLaunch.authAnswer(action, email: email, password: password, code: code)
             }
         #endif
+        // Without its page the app signs in itself (#202).
+        if PageFree.on {
+            return await AppAuth.shared.answer(action, email: email, password: password, name: name, code: code)
+        }
         guard let send else { return .failed(CasyStrings.signIn("appleFailed")) }
         asked += 1
         let id = asked

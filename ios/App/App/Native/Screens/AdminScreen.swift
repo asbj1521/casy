@@ -157,6 +157,8 @@ struct AdminScreen: View {
     @State private var query = ""
     @State private var problemsOnly = false
     @State private var nativeHome = NativeHome.on
+    @State private var pageFree = PageFree.on
+    @State private var switchingPage = false
     @State private var asking: AdminAsk?
     @State private var removingMember: String?
     @State private var testerSaving: Set<String> = []
@@ -197,6 +199,28 @@ struct AdminScreen: View {
                     }
                     .accessibilityIdentifier("admin.nativeHome")
                     .onChange(of: nativeHome) { _, on in NativeHome.on = on }
+                    // The app without its page (#202): the login moves, and the app closes to open again.
+                    CardList {
+                        CardRow(CasyStrings.adminPageFree, detail: CasyStrings.adminPageFreeDetail) {
+                            EmptyView()
+                        } trailing: {
+                            Toggle(CasyStrings.adminPageFree, isOn: $pageFree)
+                                .labelsHidden()
+                                .tint(Theme.primary.color)
+                                .disabled(switchingPage)
+                        }
+                        .accessibilityElement(children: .contain)
+                    }
+                    .padding(.top, 12)
+                    .accessibilityIdentifier("admin.pageFree")
+                    .onChange(of: pageFree) { _, on in
+                        guard on != PageFree.on, !switchingPage else { return }
+                        switchingPage = true
+                        Task {
+                            if await PageFreeSwitch.run?(on) != true { pageFree = PageFree.on }
+                            switchingPage = false
+                        }
+                    }
                 #endif
             }
             .frame(maxWidth: .infinity, alignment: .leading)
