@@ -239,6 +239,12 @@ public enum CasyStrings {
     public static func friendsRemoveAsk(_ value: String) -> String { String(format: text("friends.removeAsk"), value) }
     public static var friendsFailed: String { text("friends.failed") }
     public static var friendLinkAdd: String { text("friendLink.add") }
+    public static func friendLinkAsks(_ name: String) -> String { String(format: text("friendLink.asks"), name) }
+    public static var friendLinkAsksAnon: String { text("friendLink.asksAnon") }
+    public static var friendLinkDetail: String { text("friendLink.detail") }
+    public static var friendLinkAccept: String { text("friendLink.accept") }
+    public static var friendLinkAbout: String { text("friendLink.about") }
+    public static var friendLinkPromise: String { text("friendLink.promise") }
     public static var friendLinkMessage: String { text("friendLink.message") }
     public static var friendLinkShareTitle: String { text("friendLink.shareTitle") }
     public static func friendLinkHelp(_ value: String) -> String { String(format: text("friendLink.linkHelp"), value) }

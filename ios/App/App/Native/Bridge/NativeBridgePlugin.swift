@@ -52,7 +52,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if TestLaunch.isActive, TestLaunch.webOnly { return [] }
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
-                "home", "plan", "signIn", "welcome", "invitePaste", "join",
+                "home", "plan", "signIn", "welcome", "invitePaste", "join", "friend",
             ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks", "notifications"] : [])
         #else
             return []
@@ -520,6 +520,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                         case .home: self?.dismissOpenScreen(["next": "/"])
                         }
                     }))
+            : screen == "friend"
+            ? AnyView(
+                FriendLinkScreen(
+                    preferences: NativePreferences.shared, token: state["token"] as? String ?? state["start"] as? String ?? "",
+                    signedIn: state["signedIn"] as? Bool ?? Self.testSignedIn, autoAdd: state["autoAdd"] as? Bool == true,
+                    onChoose: onChoose,
+                    finish: { [weak self] outcome in
+                        switch outcome {
+                        case .added: self?.dismissOpenScreen(["friendAdded": true])
+                        case .signUp: self?.dismissOpenScreen(["signUp": true])
+                        case .home: self?.dismissOpenScreen(["next": "/"])
+                        }
+                    }))
             : screen == "welcome"
             ? AnyView(
                 WelcomeScreen(
@@ -564,7 +577,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             ? AnyView(
                 ProfileScreen(
                     preferences: NativePreferences.shared, build: build, userAgent: userAgent,
-                    onChoose: onChoose, onDone: onDone, enablePush: enablePush, leave: leave))
+                    onChoose: onChoose, onDone: onDone, enablePush: enablePush, leave: leave,
+                    start: (state["group"] as? String).map(ProfileStart.group)
+                        ?? (state["friends"] as? Bool == true ? .friends : nil)))
             : AnyView(
                 SettingsScreen(
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
@@ -579,7 +594,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // Over everything, with no way out but the App Store.
             host.modalPresentationStyle = .fullScreen
             host.isModalInPresentation = true
-        } else if screen == "join" {
+        } else if screen == "join" || screen == "friend" {
             // A page of its own, as the web's: what the link leads to, and the one answer.
             host.modalPresentationStyle = .fullScreen
             host.modalTransitionStyle = .crossDissolve
@@ -1184,6 +1199,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         openScreen = nil
         let here = openedHere || PageFree.on
         openedHere = false
+        if openProfileOn(then) { return }
         if here {
             closedHere(screen, then)
         } else {
@@ -1192,6 +1208,23 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     }
 
     // MARK: The app's own routing (#202)
+
+    /// An invite to a group you are in, a friend link said yes to: Profil, on
+    /// that group or Venner, whoever opened the screen before it.
+    private func openProfileOn(_ then: [String: Any]) -> Bool {
+        guard let presenter = bridge?.viewController, Self.nativeScreens.contains("profile") else { return false }
+        let state: [String: Any]
+        if let group = then["group"] as? String {
+            state = ["group": group]
+        } else if then["friendAdded"] as? Bool == true {
+            state = ["friends": true]
+        } else {
+            return false
+        }
+        openedHere = true
+        present("profile", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
+        return true
+    }
 
     /// A sheet the app opened itself, not the page: its closing isn't the page's to hear.
     private var openedHere = false
@@ -1235,6 +1268,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return sheet("events", ["vote": id])
         case .join(let token):
             return sheet("join", ["token": token, "signedIn": true])
+        case .friend(let token):
+            return sheet("friend", ["token": token, "signedIn": true])
         case .settings:
             return sheet("settings", [:])
         }
@@ -1362,6 +1397,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             Task { await HomeModel.shared.load() }
             return
         }
+        // Hjem from an invite or a friend link: the home page is under it already.
+        if then["next"] as? String == "/" { return }
         if then["plan"] as? Bool == true, let presenter = bridge?.viewController {
             openedHere = true
             present("plan", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: prime.map { ["prime": $0] } ?? [:])

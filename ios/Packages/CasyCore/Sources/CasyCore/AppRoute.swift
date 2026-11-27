@@ -15,12 +15,14 @@ public enum AppRoute: Equatable, Sendable {
     case vote(String)
     /// An invite link (`/join/<token>`).
     case join(String)
+    /// A friend link (`/friend/<token>`, #226).
+    case friend(String)
     /// Indstillinger (`/profile/settings`, the admin's test notification).
     case settings
 }
 
 /// The app's screen for an in-app path, or nil when the page still has it
-/// (Grupper, an invitation, a friend link, any other page).
+/// (Grupper, an invitation, any other page).
 public func appRoute(_ path: String) -> AppRoute? {
     let bare = path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? path
     let parts = bare.split(separator: "/").map(String.init)
@@ -32,6 +34,7 @@ public func appRoute(_ path: String) -> AppRoute? {
     case 1 where parts[0] == "events": return .events(nil)
     case 2 where parts[0] == "events": return .events(parts[1])
     case 2 where parts[0] == "join": return .join(parts[1])
+    case 2 where parts[0] == "friend": return .friend(parts[1])
     case 2 where parts == ["profile", "settings"]: return .settings
     case 3 where parts[0] == "events" && parts[2] == "dates": return .vote(parts[1])
     default: return nil

@@ -104,6 +104,9 @@ final class GroupsModel {
         if let answer = try? await api.friends() { friends = answer }
     }
 
+    /// Friends now, as a friend link's yes answered them (#226).
+    func friendsAdded(_ now: [Friend]) { friends = now }
+
     /// Invitations sent: the people show as invited once the picks are cleared.
     func invite(_ groupId: String, profileIds: [String], emails: [String]) async throws {
         let api = try await signedIn(CasyStrings.inviteSendFailed)

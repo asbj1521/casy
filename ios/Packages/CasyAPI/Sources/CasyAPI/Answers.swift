@@ -200,6 +200,16 @@ public struct FriendsAnswer: Codable, Sendable, Equatable {
     public var friends: [Friend]?
 }
 
+/// Who a friend link is from: their name and picture, nil once their account is gone.
+public struct FriendPreview: Codable, Sendable, Equatable {
+    public var friend: Person
+
+    public struct Person: Codable, Sendable, Equatable {
+        public var name: String?
+        public var avatarUrl: String?
+    }
+}
+
 /// A fresh invite link: anyone holding it can join until it runs out.
 public struct InviteLink: Codable, Sendable, Equatable {
     public var url: String

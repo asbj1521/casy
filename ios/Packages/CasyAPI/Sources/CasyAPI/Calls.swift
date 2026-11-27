@@ -778,6 +778,18 @@ extension EdgeFunctions {
         try await call("groups", body: FriendLink(), errorMessage: errorMessage)
     }
 
+    /// Who made a friend link, for its page before anyone signs in (`previewFriend`).
+    public func previewFriend(_ token: String, errorMessage: String? = nil) async throws -> FriendPreview {
+        try await call("groups", body: TokenAction(action: "preview-friend", token: token), errorMessage: errorMessage)
+    }
+
+    /// Yes to a friend link (`addFriend`): friends both ways; answers your friends.
+    public func addFriend(_ token: String, errorMessage: String? = nil) async throws -> [Friend] {
+        let answer: FriendsAnswer = try await call(
+            "groups", body: TokenAction(action: "add-friend", token: token), errorMessage: errorMessage)
+        return answer.friends ?? []
+    }
+
     /// No longer friends; answers the friends left.
     public func removeFriend(_ profileId: String, errorMessage: String? = nil) async throws -> [Friend] {
         let answer: FriendsAnswer = try await call(

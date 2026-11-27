@@ -121,6 +121,13 @@ enum LeavingProfile {
     case findDates
 }
 
+/// A screen inside Profil the sheet opens on: where a friend link or an
+/// invite for a group you are in leads (#202).
+enum ProfileStart: Hashable {
+    case friends
+    case group(String)
+}
+
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.
 /// Rows whose screens aren't native yet hand over to the page's own.
 struct ProfileScreen: View {
@@ -131,6 +138,8 @@ struct ProfileScreen: View {
     let onDone: () -> Void
     let enablePush: () async -> String
     let leave: (LeavingProfile) -> Void
+    /// Opened on one of its screens, the list under it to go back to.
+    var start: ProfileStart?
 
     private let model = ProfileModel.shared
     /// What "Del appen" sends, as the web app does (shareAppUrl, #271).
@@ -143,6 +152,8 @@ struct ProfileScreen: View {
 
     @Environment(\.openURL) private var openURL
     @State private var renaming = false
+    @State private var opened: ProfileStart?
+    @State private var startedOn = false
     @State private var newName = ""
 
     private var name: String { model.whoAmI?.name ?? model.email ?? "" }
@@ -261,6 +272,17 @@ struct ProfileScreen: View {
                         model.rename(to: String(trimmed.prefix(Self.maxNameLength)))
                     }
                 }
+            }
+            .navigationDestination(item: $opened) { start in
+                switch start {
+                case .friends: FriendsScreen()
+                case .group(let id): GroupScreen(groupId: id)
+                }
+            }
+            .onAppear {
+                guard !startedOn else { return }
+                startedOn = true
+                opened = start
             }
         }
         // Every screen pushed inside keeps Færdig on the right (design rule 11).

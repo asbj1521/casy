@@ -3180,6 +3180,108 @@
         }
       }
     },
+    "friendLink.asks": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ vil være venner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ wants to be friends"
+          }
+        }
+      }
+    },
+    "friendLink.asksAnon": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du er inviteret til at blive venner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You are invited to be friends"
+          }
+        }
+      }
+    },
+    "friendLink.detail": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "så I kan finde dage sammen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "so you can find days together"
+          }
+        }
+      }
+    },
+    "friendLink.accept": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bliv venner"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Become friends"
+          }
+        }
+      }
+    },
+    "friendLink.about": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hvad betyder det?"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "What does this mean?"
+          }
+        }
+      }
+    },
+    "friendLink.promise": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I kan invitere hinanden til grupper. Ingen af jer kan se den andens kalender, før I selv siger ja til en gruppe."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "You can invite each other to groups. Neither of you can see the other's calendar until you both say yes to a group."
+          }
+        }
+      }
+    },
     "friendLink.add": {
       "extractionState": "manual",
       "localizations": {

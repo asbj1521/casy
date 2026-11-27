@@ -106,4 +106,23 @@ final class InviteUITests: XCTestCase {
         app.buttons["join.home"].firstMatch.tap()
         XCTAssertTrue(app.descendants(matching: .any)["join.screen"].waitForNonExistence(timeout: 10))
     }
+
+    /// A friend link natively (#226): who asks, Bliv venner, and on to Venner with them in it.
+    func testAFriendLinkMakesFriends() {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-casyBackend", testBackend,
+            "-casyOpenScreen", "friend:abc123",
+            "-casyLang", "da",
+            "-casyNow", "2026-10-07T08:00:00.000Z",
+        ]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Sara vil være venner"].waitForExistence(timeout: 20), "who asked")
+        let answer = app.buttons["friendLink.answer"]
+        XCTAssertEqual(answer.label, "Bliv venner")
+        answer.tap()
+        XCTAssertTrue(
+            app.descendants(matching: .any)["friendLink.screen"].waitForNonExistence(timeout: 15), "friends, it closes")
+        XCTAssertTrue(app.staticTexts["Sara Ny"].waitForExistence(timeout: 15), "on Venner, the new friend in it")
+    }
 }
