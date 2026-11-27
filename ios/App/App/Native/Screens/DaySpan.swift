@@ -188,12 +188,16 @@ struct DaySpan: View {
                 .foregroundStyle(Theme.primary.color)
                 .padding(.horizontal, 4)
                 .padding(.top, 2)
-            } else if isLast {
+            }
+        }
+        // The last day's part says when it ends, at its end.
+        .overlay(alignment: .bottomLeading) {
+            if isLast && !isFirst {
                 Text(verbatim: "-\(formatTime(isoString(end)))")
                     .font(.system(size: 11).monospacedDigit())
                     .foregroundStyle(Theme.primary.color)
                     .padding(.horizontal, 4)
-                    .padding(.top, 2)
+                    .padding(.bottom, 3)
             }
         }
         .frame(width: max(0, width - 4), height: height)
