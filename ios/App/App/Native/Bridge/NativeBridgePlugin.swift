@@ -1004,9 +1004,14 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// The phone's calendar is written by the page's sync (usePhoneCalendarSync):
-    /// it asks, and waits up to 15 seconds for it to be done.
+    /// The phone's calendar written: by the app's own sync where it sends the phone's
+    /// calendars, else by the page's (usePhoneCalendarSync), waited for up to 15 seconds.
     @MainActor private func writeOnPhone() async {
+        // The app sends the phone's calendars itself (#282): its sync carries out the writes after.
+        if PhoneSyncWork.on {
+            _ = await PhoneSyncWork.shared.sync(create: false)
+            return
+        }
         writeAnswer?.resume()
         writeAnswer = nil
         #if DEBUG
