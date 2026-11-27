@@ -12,7 +12,11 @@ final class NativePreferences {
 
     /// "da" or "en".
     var lang = "da" {
-        didSet { CasyStrings.language = lang }
+        didSet {
+            CasyStrings.language = lang
+            // The server writes notifications in the language registered (#202).
+            if lang != oldValue { PushWork.shared.languageChanged() }
+        }
     }
     /// "system", "light" or "dark".
     var theme = "system"

@@ -32,6 +32,12 @@ private struct PushSet: Encodable, Sendable {
     let on: Bool
 }
 
+private struct PushToken: Encodable, Sendable {
+    let action: String
+    let token: String
+    let lang: String?
+}
+
 private struct SetName: Encodable, Sendable {
     let action = "set-name"
     let name: String
@@ -554,6 +560,20 @@ private struct SetAvatar: Encodable, Sendable {
 }
 
 extension EdgeFunctions {
+    /// This phone's APNs token registered with the account, in the language its
+    /// notifications are written in (#202, the web's registerPushToken).
+    public func registerPushToken(_ token: String, lang: Lang, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call(
+            "account", body: PushToken(action: "push-register", token: token, lang: lang.rawValue),
+            errorMessage: errorMessage)
+    }
+
+    /// This phone's token taken back from the account, as it signs out.
+    public func unregisterPushToken(_ token: String, errorMessage: String? = nil) async throws {
+        let _: Ignored = try await call(
+            "account", body: PushToken(action: "push-unregister", token: token, lang: nil), errorMessage: errorMessage)
+    }
+
     public func pushSettings(errorMessage: String? = nil) async throws -> PushSettings {
         try await call("account", body: Action(action: "push-settings"), errorMessage: errorMessage)
     }

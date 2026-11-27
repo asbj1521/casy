@@ -32,6 +32,10 @@
         static var asks: Bool { defaults.bool(forKey: "casyAsks") }
         /// `-casyLive YES`: the app listens for others' changes itself (#202), on the fake backend's socket.
         static var live: Bool { defaults.bool(forKey: "casyLive") }
+        /// `-casyPush YES`: notifications are the app's own (#202), a tap opening its screens.
+        static var push: Bool { defaults.bool(forKey: "casyPush") }
+        /// `-casyPushTap /events`: a notification's tap launching the app (#202).
+        static var pushTap: String? { defaults.string(forKey: "casyPushTap") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
         static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }

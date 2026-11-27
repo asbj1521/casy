@@ -4,8 +4,8 @@ import { useNavigate } from "react-router-dom";
 import PushAsk from "@/components/push/PushAsk";
 import { useAuth } from "@/context/auth";
 import { useLang } from "@/i18n/lang";
-import { onNotificationTap, refreshPush } from "@/lib/push";
-import { openInApp } from "@/lib/nativeBridge";
+import { appDoesPush, onNotificationTap, refreshPush } from "@/lib/push";
+import { onAppOpenPage, openInApp } from "@/lib/nativeBridge";
 
 /**
  * Push notifications' part of the page (#139), in the app only (App.tsx loads
@@ -30,19 +30,29 @@ export default function PushLinks() {
   useEffect(() => {
     let stop = () => {};
     let gone = false;
-    // An app build without the push plugin simply has no taps to open.
-    onNotificationTap(
-      (path) =>
-        void openInApp(path).then((opened) => {
-          if (!opened) open.current(path);
-        }),
-    ).then(
-      (remove) => {
-        if (gone) remove();
-        else stop = remove;
-      },
-      () => {},
-    );
+    const keep = (remove: () => void) => {
+      if (gone) remove();
+      else stop = remove;
+    };
+    // An app that does notifications itself (#202) opens a tap's screen and
+    // hands the page only an address it can't show; else the page listens.
+    void appDoesPush().then((app) => {
+      if (gone) return;
+      if (app) {
+        onAppOpenPage((path) => open.current(path)).then(
+          (handle) => keep(() => void handle.remove()),
+          () => {},
+        );
+        return;
+      }
+      // An app build without the push plugin simply has no taps to open.
+      onNotificationTap(
+        (path) =>
+          void openInApp(path).then((opened) => {
+            if (!opened) open.current(path);
+          }),
+      ).then(keep, () => {});
+    });
     return () => {
       gone = true;
       stop();

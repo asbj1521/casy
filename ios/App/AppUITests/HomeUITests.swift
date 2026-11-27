@@ -287,6 +287,20 @@ final class HomeUITests: XCTestCase {
         waitForExpectations(timeout: 10)
     }
 
+    /// A notification's tap that launches the app (#202): once the home page has
+    /// settled, the app opens its screen; one it doesn't have goes to the page.
+    func testANotificationsTapOpensItsScreenOnceHome() {
+        var app = launch(["-casyPush", "YES", "-casyPushTap", "/events"])
+        XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForExistence(timeout: 10))
+        XCTAssertEqual(pressed(app), "push /events: opened")
+        app.terminate()
+        app = launch(["-casyPush", "YES", "-casyPushTap", "/groups"])
+        let label = app.staticTexts["home.lastAction"]
+        XCTAssertTrue(label.waitForExistence(timeout: 10))
+        expectation(for: NSPredicate(format: "label == %@", "push /groups: the page's"), evaluatedWith: label)
+        waitForExpectations(timeout: 10)
+    }
+
     /// Each button along the top and the bottom opens its sheet in the app itself.
     func testEveryButtonOpensItsSheetHere() {
         let app = launch()

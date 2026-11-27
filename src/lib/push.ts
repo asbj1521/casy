@@ -7,8 +7,19 @@
  *
  * As in phoneCalendar.ts, the plugin's module loads on first use and only the
  * module goes through promises.
+ *
+ * In an app that does notifications itself (#202, "notifications" among its
+ * screens) the page registers nothing and listens for no tap: turning them on
+ * and signing out ask the app, which opens a tap's screen or hands the page
+ * its address (PushLinks, onAppOpenPage).
  */
+
+/** The app registers, forgets and opens notifications itself. */
+export async function appDoesPush(): Promise<boolean> {
+  return (await nativeScreens()).has("notifications");
+}
 import { registerPushToken, unregisterPushToken } from "@/api/account";
+import { enablePushInApp, forgetPushInApp, nativeScreens } from "@/lib/nativeBridge";
 import type { Lang } from "@/i18n/locale";
 import type { PushPermission } from "@/lib/pushAsk";
 import { readStored, writeStored } from "@/lib/storage";
@@ -61,6 +72,11 @@ async function register(lang: Lang): Promise<void> {
  * and with a yes, register the phone with Casy's server. Answers iOS's answer.
  */
 export async function enablePush(lang: Lang): Promise<"granted" | "denied"> {
+  if (await appDoesPush()) {
+    const answer = await enablePushInApp();
+    if (answer === "failed") throw new Error("registering failed");
+    return answer;
+  }
   const { plugin } = await pushPlugin();
   const asked = await plugin.requestPermissions();
   if (asked.receive !== "granted") return "denied";
@@ -74,6 +90,7 @@ export async function enablePush(lang: Lang): Promise<"granted" | "denied"> {
  * the one it was last registered for.
  */
 export async function refreshPush(lang: Lang): Promise<void> {
+  if (await appDoesPush()) return;
   if ((await pushPermission()) === "granted") await register(lang);
 }
 
@@ -96,6 +113,10 @@ export async function onNotificationTap(open: (path: string) => void): Promise<(
  * notifications. Never stops the sign-out.
  */
 export async function forgetPush(): Promise<void> {
+  if (await appDoesPush()) {
+    // The app's token goes first; a token the page registered before goes too, below.
+    await forgetPushInApp().catch(() => {});
+  }
   const token = readStored(TOKEN_KEY);
   if (!token) return;
   try {

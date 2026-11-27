@@ -56,6 +56,11 @@ export type NativeScreen =
   | "trips"
   /** When to ask for notifications and a rating, decided by the app (#202). */
   | "asks"
+  /**
+   * Notifications themselves are the app's (#202): it registers the phone,
+   * takes the token back on signing out and opens a tap's screen.
+   */
+  | "notifications"
   /** The calendars sorted by AI (#118), with the phone's own titles. */
   | "categorize"
   /** The trips' legs read from the labelled journeys (#115); the page still pairs them into trips. */
@@ -217,6 +222,8 @@ interface NativeBridgePlugin {
   ): Promise<PluginListenerHandle>;
   openPath(options: { path: string }): Promise<{ opened: boolean }>;
   askPush(options: { reason: string }): Promise<void>;
+  forgetPush(): Promise<void>;
+  enablePushInApp(): Promise<{ answer: "granted" | "denied" | "failed" }>;
   asksFromPage(options: {
     pushAsked: number;
     pushLast?: number;
@@ -225,6 +232,10 @@ interface NativeBridgePlugin {
   addListener(
     event: "leave",
     listener: (closed: NativeClosed) => void,
+  ): Promise<PluginListenerHandle>;
+  addListener(
+    event: "openPage",
+    listener: (event: { path: string }) => void,
   ): Promise<PluginListenerHandle>;
   addListener(
     event: "closed",
@@ -535,6 +546,24 @@ export async function openInApp(path: string): Promise<boolean> {
 export async function askPushInApp(reason: string): Promise<void> {
   const { plugin } = await bridgePlugin();
   await plugin.askPush({ reason });
+}
+
+/** Signing out: the app takes this phone's notifications back first (#202, "notifications"). */
+export async function forgetPushInApp(): Promise<void> {
+  const { plugin } = await bridgePlugin();
+  await plugin.forgetPush();
+}
+
+/** Turning notifications on from one of the page's screens, done by the app (#202). */
+export async function enablePushInApp(): Promise<"granted" | "denied" | "failed"> {
+  const { plugin } = await bridgePlugin();
+  return (await plugin.enablePushInApp()).answer;
+}
+
+/** A notification's address the app couldn't show itself (#202): the page goes there. */
+export async function onAppOpenPage(open: (path: string) => void): Promise<PluginListenerHandle> {
+  const { plugin } = await bridgePlugin();
+  return plugin.addListener("openPage", (event: { path: string }) => open(event.path));
 }
 
 /** What the page counted of its asks, handed to the app once it asks itself (#202). */

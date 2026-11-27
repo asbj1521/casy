@@ -33,6 +33,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         CAPPluginMethod(name: "setTrip", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "openPath", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "askPush", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "forgetPush", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "enablePushInApp", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "asksFromPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setHome", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "labelsFromPage", returnType: CAPPluginReturnPromise),
@@ -50,7 +52,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return [
                 "settings", "profile", "events", "calendars", "tell", "trip", "prime", "aiConsent", "push", "update",
                 "home", "plan", "signIn", "welcome", "invitePaste", "join",
-            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks"] : [])
+            ] + (nativeLabels ? ["labels", "dayFacts", "categorize", "tripLegs", "phoneSync", "stars", "votes", "trips", "asks", "notifications"] : [])
         #else
             return []
         #endif
@@ -201,8 +203,19 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self.present("push", on: presenter, state: ["reason": reason])
                 return true
             }
-            // Settled: the sheets made ready, so the first press is as quick as any.
-            HomeModel.shared.onSettled = { [weak self] in self?.makeSheetsReady() }
+            // Settled: the sheets made ready, so the first press is as quick as any,
+            // and a notification's tap that launched the app opens now (#202).
+            HomeModel.shared.onSettled = { [weak self] in
+                self?.makeSheetsReady()
+                PushWork.shared.settled()
+            }
+            // Notifications are the app's own (#202): a tap opens its screen here when it can.
+            PushWork.shared.openHere = { [weak self] path in self?.open(path: path) ?? false }
+            PushWork.shared.openOnPage = { [weak self] path in
+                self?.notifyListeners("openPage", data: ["path": path])
+            }
+            // After every plugin has loaded: the push plugin takes the taps as it loads.
+            PushWork.shared.takeTaps(from: self?.bridge)
             // The home page's buttons open the app's own sheets (#202): the page isn't asked.
             HomeModel.shared.route = { [weak self] action, day in
                 self?.route(action, day) ?? false
@@ -253,6 +266,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
                 LivePulse.shared.signedIn(connection.userId)
+                PushWork.shared.takeTaps(from: self.bridge)
+                PushWork.shared.signedIn(connection.userId)
                 if TestLaunch.seedPhone {
                     // Every run from an empty book: what a run before kept proves nothing.
                     LabelsWork.shared.clear(nil)
@@ -274,6 +289,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                     while bridge?.viewController?.view.window == nil {
                         try? await Task.sleep(for: .milliseconds(100))
                     }
+                    // A notification's tap that launched the app (#202): it waits for the home page.
+                    if let path = TestLaunch.pushTap { PushWork.shared.open(path) }
                     model.update(TestLaunch.homePage)
                     placeHome()
                     if let path = TestLaunch.path {
@@ -329,6 +346,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 LabelsWork.shared.signedIn(next?.userId)
                 CategorizeWork.shared.signedIn(next?.userId)
                 LivePulse.shared.signedIn(next?.userId)
+                PushWork.shared.takeTaps(from: self.bridge)
+                PushWork.shared.signedIn(next?.userId)
             }
             // Someone else on this phone must never see the last person's choices.
             if before != next?.userId {
@@ -990,8 +1009,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         }
     }
 
-    /// The web view turns them on: the phone's token reaches only the page.
+    /// Turned on by the app itself (#202), or else by the web view, where the phone's token reaches only the page.
     @MainActor private func enablePush() async -> String {
+        if PushWork.on { return await PushWork.shared.enable() }
         finishPush("failed")
         #if DEBUG
             if let answer = TestLaunch.pushAnswer { return answer }
@@ -1222,6 +1242,21 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 let host = UIHostingController(rootView: view)
                 _ = host.sizeThatFits(in: UIScreen.main.bounds.size)
             }
+        }
+    }
+
+    /// Signing out on the page (#202): this phone's token taken back by the app first.
+    @objc func forgetPush(_ call: CAPPluginCall) {
+        Task { @MainActor in
+            await PushWork.shared.forget()
+            call.resolve()
+        }
+    }
+
+    /// Turning notifications on from one of the page's screens (#202): done by the app.
+    @objc func enablePushInApp(_ call: CAPPluginCall) {
+        Task { @MainActor in
+            call.resolve(["answer": await PushWork.shared.enable()])
         }
     }
 
