@@ -38,7 +38,7 @@ final class PageAuth {
         #if DEBUG
             // A test with a made-up login is answered with made-up words; a signed-out
             // one signs in for real, against the fake backend.
-            if TestLaunch.isActive && !TestLaunch.pageAuth {
+            if TestLaunch.isActive && !TestLaunch.signedOut {
                 return TestLaunch.authAnswer(action, email: email, password: password, code: code)
             }
         #endif

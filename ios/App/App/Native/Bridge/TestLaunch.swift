@@ -59,6 +59,14 @@
         static var webOnly: Bool { defaults.bool(forKey: "casyWebOnly") }
         /// `-casyPageAuth YES`: sign-in's steps go to the page, signed out, as in real use (#282).
         static var pageAuth: Bool { defaults.bool(forKey: "casyPageAuth") }
+
+        /// Signed out: `-casyPageAuth YES`, or a parity launch handed an empty login.
+        static var signedOut: Bool { pageAuth || (defaults.string(forKey: "casyWebSession") != nil && webPerson == nil) }
+
+        /// A parity launch (#280) with Mia's login handed over (`-casyWebSession`): the app on
+        /// its own data, as in real use, opening the screen its address names (`-casyWebPath`).
+        static var parityData: Bool { isActive && webPerson != nil }
+        static var webPath: String? { defaults.string(forKey: "casyWebPath") }
         /// `-casyCopied <text>`: what "Indsæt link" reads as copied (#282), so a test
         /// never touches the simulator's pasteboard or iOS's question about it.
         static var copied: String? { defaults.string(forKey: "casyCopied") }
@@ -281,7 +289,7 @@
 
         /// Who the page is signed in as in a parity launch (#281): Mia, from the
         /// session handed over, so a native screen shows her email as the web's does.
-        private static var webPerson: (id: String, email: String?)? {
+        static var webPerson: (id: String, email: String?)? {
             guard let encoded = defaults.string(forKey: "casyWebSession"),
                 let data = Data(base64Encoded: encoded),
                 let stored = try? JSONSerialization.jsonObject(with: data) as? [String: String],

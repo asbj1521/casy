@@ -34,7 +34,7 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
     /// test, whose made-up login has no phone calendars to label.
     static let nativeLabels: Bool = {
         #if DEBUG
-            if TestLaunch.isActive { return TestLaunch.seedPhone }
+            if TestLaunch.isActive { return TestLaunch.seedPhone || TestLaunch.parityData }
         #endif
         return true
     }()
@@ -53,7 +53,7 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
     /// a test's made-up login is, unless the page signs in by itself.
     private static var testSignedIn: Bool {
         #if DEBUG
-            return TestLaunch.isActive && !TestLaunch.pageAuth
+            return TestLaunch.isActive && !TestLaunch.signedOut
         #else
             return false
         #endif
@@ -188,13 +188,45 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
                         model.testAction = "path \(path): \(open(path: path) ? "opened" : "the page's")"
                     }
                 }
-                // Web only (#280): the page opens its own screen (`-casyWebPath`).
-                guard !TestLaunch.webOnly, let screen = TestLaunch.screen else { return }
-                // The web view's own controller has to be on screen first.
+                if TestLaunch.parityData {
+                    // A parity shot (#280): as in real use, the login passed on to every part of
+                    // the app and its home on its own data, then the screen its address names.
+                    await self.apply(connection, phone: "conn-apple")
+                    self.showPageFree(signedIn: true)
+                    if let address = TestLaunch.webPath {
+                        try? await Task.sleep(for: .milliseconds(1500))
+                        self.openForTest(address)
+                    }
+                }
+                guard let screen = TestLaunch.screen else { return }
                 while root?.view.window == nil {
                     try? await Task.sleep(for: .milliseconds(100))
                 }
                 if let presenter = root { present(screen, on: presenter) }
+            }
+        }
+        /// What the page's address in a parity shot names (`/?events=ev-1`, `/join/abc`),
+        /// opened as the app opens it: the page drew those from its own address.
+        private func openForTest(_ address: String) {
+            guard let presenter = root, openScreen == nil else { return }
+            if appRoute(address) != nil, !address.hasPrefix("/?"), address != "/" {
+                _ = open(path: address)
+                return
+            }
+            let query = address.hasPrefix("/?") ? String(address.dropFirst(2)) : ""
+            let parts = query.split(separator: "=", maxSplits: 1).map(String.init)
+            let value = parts.count > 1 ? parts[1] : nil
+            switch parts.first {
+            case "profile": present("profile", on: presenter, state: value.map { ["start": $0] } ?? [:])
+            case "plan": present("plan", on: presenter)
+            case "events": present("events", on: presenter, state: value.map { ["vote": $0] } ?? [:])
+            case "calendars": present("calendars", on: presenter, state: value.map { ["start": $0] } ?? [:])
+            case "pushAsk": present("push", on: presenter, state: ["reason": value ?? "sent"])
+            case "vote": HomeModel.shared.voteToOpen = value
+            case "day":
+                let ymd = (value ?? "").split(separator: "-").compactMap { Int($0) }
+                if ymd.count == 3 { HomeModel.shared.dayToOpen = wallTime(ymd[0], ymd[1] - 1, ymd[2], 0, appTimeZone) }
+            default: break
             }
         }
     #endif
@@ -1006,7 +1038,7 @@ final class AppCoordinator: NSObject, UIAdaptivePresentationControllerDelegate {
         #if DEBUG
             // A test's made-up login is signed in already (startTestLaunch); only a signed-out
             // test (`-casyPageAuth YES`) has the app's own login, or none and the welcome.
-            if TestLaunch.isActive, !TestLaunch.pageAuth {
+            if TestLaunch.isActive, !TestLaunch.signedOut {
                 UpdateCheck.shared.show = { [weak self] store in self?.showUpdate(store) }
                 UpdateCheck.shared.start()
                 return
