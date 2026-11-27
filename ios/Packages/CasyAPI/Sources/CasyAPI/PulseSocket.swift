@@ -113,6 +113,8 @@ public actor PulseSocket {
     private let token: @Sendable () async -> String?
     private let retryDelays: [Duration]
     private let heartbeatEvery: Duration
+    /// What happens on the socket, for a Debug build's log.
+    private let log: (@Sendable (String) -> Void)?
 
     private var task: URLSessionWebSocketTask?
     private var running = false
@@ -126,7 +128,8 @@ public actor PulseSocket {
         projectURL: URL, apiKey: String, userId: String,
         token: @escaping @Sendable () async -> String?,
         retryDelays: [Duration] = [.seconds(5), .seconds(15), .seconds(60), .seconds(300)],
-        heartbeatEvery: Duration = .seconds(25)
+        heartbeatEvery: Duration = .seconds(25),
+        log: (@Sendable (String) -> Void)? = nil
     ) {
         guard let url = RealtimeMessage.url(projectURL: projectURL, apiKey: apiKey) else { return nil }
         self.url = url
@@ -134,6 +137,7 @@ public actor PulseSocket {
         self.token = token
         self.retryDelays = retryDelays
         self.heartbeatEvery = heartbeatEvery
+        self.log = log
         (events, continuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(8))
     }
 
@@ -212,7 +216,11 @@ public actor PulseSocket {
             case .string(let s): data = Data(s.utf8)
             @unknown default: continue
             }
-            switch RealtimeMessage.read(data, topic: topic) {
+            let read = RealtimeMessage.read(data, topic: topic)
+            if read != .other || !(String(data: data, encoding: .utf8) ?? "").contains("\"phoenix\"") {
+                log?("in: \(String(data: data.prefix(300), encoding: .utf8) ?? "?")")
+            }
+            switch read {
             case .joined(let ref) where ref == joinRef:
                 failures = 0
                 continuation.yield(.live(true))
@@ -231,6 +239,7 @@ public actor PulseSocket {
     /// Start over from a fresh socket after a while, rather than trust this one to recover.
     private func failed(_ task: URLSessionWebSocketTask) {
         guard running, self.task === task else { return }
+        log?("failed, trying again (\(failures + 1))")
         drop()
         continuation.yield(.live(false))
         let delay = retryDelays[min(failures, retryDelays.count - 1)]

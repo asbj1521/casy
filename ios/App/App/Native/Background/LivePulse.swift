@@ -38,6 +38,8 @@ final class LivePulse {
     private var lastActive = Date()
     private var lastSeen: String?
     private var asking = false
+    /// Told to ask while an ask was on its way: once more right after it.
+    private var askAgain = false
     private var observers: [NSObjectProtocol] = []
 
     private static let pollSteps: [(quietFor: TimeInterval, every: TimeInterval)] = [
@@ -52,6 +54,14 @@ final class LivePulse {
         if live { return safetyPoll }
         return pollSteps.last { quiet >= $0.quietFor }?.every ?? pollSteps[0].every
     }
+
+    private static let socketLog: (@Sendable (String) -> Void)? = {
+        #if DEBUG
+            return { NSLog("LivePulse socket %@", $0) }
+        #else
+            return nil
+        #endif
+    }()
 
     /// Who is signed in now: someone else starts from scratch, nobody stops it.
     func signedIn(_ id: String?) {
@@ -78,6 +88,7 @@ final class LivePulse {
         pacing?.cancel()
         debounce?.cancel()
         hiddenTimer?.cancel()
+        askAgain = false
         for observer in observers { NotificationCenter.default.removeObserver(observer) }
         observers = []
         status = "off"
@@ -104,6 +115,9 @@ final class LivePulse {
     }
 
     private func wentAway() {
+        #if DEBUG
+            NSLog("LivePulse: the app left the screen")
+        #endif
         hiddenTimer?.cancel()
         hiddenTimer = Task {
             try? await Task.sleep(for: Self.hiddenGrace)
@@ -128,7 +142,8 @@ final class LivePulse {
             guard
                 let socket = PulseSocket(
                     projectURL: projectURL, apiKey: connection.apiKey, userId: userId,
-                    token: { await SessionBox.shared.accessToken() })
+                    token: { await SessionBox.shared.accessToken() },
+                    log: Self.socketLog)
             else { return }
             self.socket = socket
             status = "connecting"
@@ -173,7 +188,13 @@ final class LivePulse {
 
     // MARK: Asking the pulse
 
+    /// The next ask, after `seconds`. One already on its way is never cut off
+    /// (its answer would be lost): "now" then waits for it and goes right after.
     private func schedule(after seconds: TimeInterval) {
+        if asking {
+            if seconds == 0 { askAgain = true }
+            return
+        }
         pacing?.cancel()
         pacing = Task {
             if seconds > 0 { try? await Task.sleep(for: .seconds(seconds)) }
@@ -185,9 +206,24 @@ final class LivePulse {
     private func ask() async {
         guard !asking, let userId else { return }
         asking = true
-        defer { asking = false }
-        if let api = await Native.api(), let pulse = try? await api.pulse(), self.userId == userId {
+        askAgain = false
+        var answer: String?
+        if let api = await Native.api() {
+            do {
+                answer = try await api.pulse()
+            } catch {
+                #if DEBUG
+                    NSLog("LivePulse: asking failed, %@", "\(error)")
+                #endif
+            }
+        }
+        asking = false
+        guard !Task.isCancelled, self.userId == userId else { return }
+        if let pulse = answer {
             let changed = lastSeen != nil && lastSeen != pulse
+            #if DEBUG
+                NSLog("LivePulse: asked, %@", String(pulse.prefix(8)))
+            #endif
             // The first answer counts as activity, as does one that moved.
             if lastSeen != pulse { lastActive = Date() }
             lastSeen = pulse
@@ -196,7 +232,12 @@ final class LivePulse {
         guard !Task.isCancelled, self.userId == userId, UIApplication.shared.applicationState != .background
         else { return }
         if !live && socket != nil { status = "asking on its own" }
-        schedule(after: Self.pollDelay(quiet: Date().timeIntervalSince(lastActive), live: live))
+        if askAgain {
+            askAgain = false
+            schedule(after: 0)
+        } else {
+            schedule(after: Self.pollDelay(quiet: Date().timeIntervalSince(lastActive), live: live))
+        }
     }
 
     /// What others changed, fetched again where the app holds it.
