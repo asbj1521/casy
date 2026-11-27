@@ -22,6 +22,17 @@ struct DaySlice: View {
     @Environment(\.colorScheme) private var scheme
     @State private var day: DayOfCalendar?
 
+    init(start: Int64, end: Int64, label: String, onOpen: @escaping (_ day: Int64) -> Void) {
+        self.start = start
+        self.end = end
+        self.label = label
+        self.onOpen = onOpen
+        // A day read a moment ago (or ahead, as Aftaler loaded) is drawn at once.
+        _day = State(
+            initialValue: DayOfCalendar.kept(startOfDay(start, appTimeZone))?
+                .without(start: start, end: end, midnight: startOfDay(start, appTimeZone)))
+    }
+
     private static let leastHours = 5.0
     private static let aroundHours = 1.0
     private static let height: CGFloat = 260
@@ -44,7 +55,11 @@ struct DaySlice: View {
                 Color.clear.frame(height: 1)
             }
         }
-        .task(id: start) { day = await DayOfCalendar.load(midnight)?.without(start: start, end: end, midnight: midnight) }
+        .task(id: start) {
+            if let fresh = await DayOfCalendar.read(midnight)?.without(start: start, end: end, midnight: midnight) {
+                day = fresh
+            }
+        }
     }
 
     /// The hours shown: the event with an hour either side (five at the
@@ -262,6 +277,36 @@ struct DayOfCalendar {
         if let title = s.details?.title, !title.isEmpty { return title }
         return names[s.calendarId] ?? ""
     }
+
+    /// Days read lately, by midnight and language: an event's slice opens
+    /// drawn, and is read again quietly once it is a few minutes old.
+    @MainActor private static var days: [String: (day: DayOfCalendar, at: Date)] = [:]
+    private static let freshFor: TimeInterval = 300
+
+    @MainActor private static func key(_ midnight: Int64) -> String { "\(midnight)|\(CasyStrings.language)" }
+
+    /// The day as last read, however old.
+    @MainActor static func kept(_ midnight: Int64) -> DayOfCalendar? { days[key(midnight)]?.day }
+
+    /// The day, from what was read lately or read now.
+    @MainActor static func read(_ midnight: Int64) async -> DayOfCalendar? {
+        if let hit = days[key(midnight)], Date().timeIntervalSince(hit.at) < freshFor { return hit.day }
+        guard let fresh = await load(midnight) else { return kept(midnight) }
+        days[key(midnight)] = (fresh, Date())
+        return fresh
+    }
+
+    /// The days of these events read ahead (Aftaler's agreed dates), so their slices open drawn.
+    @MainActor static func readAhead(_ midnights: Set<Int64>) {
+        let wanted = midnights.filter { m in days[key(m)].map { Date().timeIntervalSince($0.at) >= freshFor } ?? true }
+        guard !wanted.isEmpty else { return }
+        Task { @MainActor in
+            for midnight in wanted.sorted() { _ = await read(midnight) }
+        }
+    }
+
+    /// Everything read forgotten: your calendar changed (something added, the home page read again).
+    @MainActor static func forgetDays() { days = [:] }
 
     @MainActor static func load(_ midnight: Int64) async -> DayOfCalendar? {
         guard let api = await Native.api() else { return nil }

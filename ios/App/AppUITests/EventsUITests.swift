@@ -106,6 +106,7 @@ final class EventsUITests: XCTestCase {
         XCTAssertTrue(freja.label.contains("Foreslået af Freja"), freja.label)
         XCTAssertTrue(app.buttons["Rapportér aftalen"].exists)
         XCTAssertTrue(app.buttons["Forlad aftale"].exists)
+        shot("dated-slice")
     }
 
     /// Your own has no report, and cancelling it is asked first.

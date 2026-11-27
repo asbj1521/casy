@@ -444,6 +444,11 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         var state = state
         if parts.count > 1 { state["start"] = parts[1] }
         let onChoose: (String, String) -> Void = { [weak self] lang, theme in
+            // Without the page the app applies it itself (#202); with it, the page does and says so back.
+            if PageFree.on {
+                NativePreferences.shared.lang = lang
+                NativePreferences.shared.theme = theme
+            }
             self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
         }
         let onDone: () -> Void = { [weak self] in self?.dismissOpenScreen() }
@@ -1347,6 +1352,9 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
         openedPrime = nil
         if let added = then["added"] as? String, let start = parseInstant(added) {
             HomeModel.shared.focus = startOfMonth(start, appTimeZone)
+            // What was added drawn at once: the calendar read again (the page did it before, #202).
+            DayOfCalendar.forgetDays()
+            Task { await HomeModel.shared.load() }
             return
         }
         if then["plan"] as? Bool == true, let presenter = bridge?.viewController {
@@ -1405,6 +1413,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// The app on its own: no page loaded (MainViewController), the login the
     /// app's (AppSession), the native home always on, the welcome when signed out.
     @MainActor private func startPageFree() {
+        NativePreferences.shared.applyTheme()
         if let endpoint = ProjectEndpoint.current {
             Task { await SessionBox.shared.setEndpoint(endpoint.url, apiKey: endpoint.apiKey) }
         }

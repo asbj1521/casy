@@ -41,6 +41,16 @@ final class EventsModel {
     func show(_ events: [SuggestedEvent]) {
         self.events = events
         askWhileDeciding()
+        // The agreed dates still to come: their day slices read ahead, so each opens drawn.
+        let now = Self.now
+        DayOfCalendar.readAhead(
+            Set(
+                events.compactMap { e -> Int64? in
+                    guard e.status == .scheduled, let date = e.currentDate, let end = parseInstant(date.end), end > now,
+                        let start = parseInstant(date.start)
+                    else { return nil }
+                    return startOfDay(start, appTimeZone)
+                }))
     }
 
     /// A vote everyone has answered, with a date nobody declined, is decided by

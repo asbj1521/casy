@@ -3,23 +3,43 @@ import CasyUI
 import SwiftUI
 import UserNotifications
 
-/// What the web view said the person chose. The web view stays in charge of
-/// both until Phase 6: a choice made here is sent to it (`onChoose`), which
-/// applies it as its own rows do.
+/// The language and look the person chose. The page says them while it is
+/// there (`setPreferences`) and is told a choice made here (`onChoose`); the
+/// app keeps them itself too (#202), so without the page they stay as chosen.
 @MainActor @Observable
 final class NativePreferences {
     static let shared = NativePreferences()
 
+    private static let langKey = "casy.lang"
+
     /// "da" or "en".
-    var lang = "da" {
+    var lang = UserDefaults.standard.string(forKey: NativePreferences.langKey) ?? "da" {
         didSet {
             CasyStrings.language = lang
+            UserDefaults.standard.set(lang, forKey: Self.langKey)
             // The server writes notifications in the language registered (#202).
             if lang != oldValue { PushWork.shared.languageChanged() }
         }
     }
     /// "system", "light" or "dark".
-    var theme = "system"
+    var theme = UserDefaults.standard.string(forKey: AppAppearance.key) ?? "system" {
+        didSet {
+            UserDefaults.standard.set(theme, forKey: AppAppearance.key)
+            applyTheme()
+        }
+    }
+
+    private init() {
+        CasyStrings.language = lang
+    }
+
+    /// The whole app in the chosen look: its window, so every sheet and the home page follow.
+    func applyTheme() {
+        let style = AppAppearance.style(theme)
+        for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+            for window in scene.windows { window.overrideUserInterfaceStyle = style }
+        }
+    }
 }
 
 /// Indstillinger opened by itself, from the web's profile row.
