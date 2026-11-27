@@ -252,6 +252,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if !UserDefaults.standard.bool(forKey: "casyMotion") { UIView.setAnimationsEnabled(false) }
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
+                LivePulse.shared.signedIn(connection.userId)
                 if TestLaunch.seedPhone {
                     // Every run from an empty book: what a run before kept proves nothing.
                     LabelsWork.shared.clear(nil)
@@ -327,6 +328,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 }
                 LabelsWork.shared.signedIn(next?.userId)
                 CategorizeWork.shared.signedIn(next?.userId)
+                LivePulse.shared.signedIn(next?.userId)
             }
             // Someone else on this phone must never see the last person's choices.
             if before != next?.userId {

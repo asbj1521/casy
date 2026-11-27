@@ -573,6 +573,13 @@ extension EdgeFunctions {
         try await call("groups", body: Action(action: "whoami"), errorMessage: errorMessage)
     }
 
+    /// The live pulse (#202): a hash of everything you can see that others
+    /// change; when it moves, what you look at is fetched again.
+    public func pulse() async throws -> String {
+        let answer: PulseAnswer = try await call("groups", body: Action(action: "pulse"), errorMessage: nil)
+        return answer.pulse
+    }
+
     /// The name your groups see; answers it as it was saved.
     public func setDisplayName(_ name: String, errorMessage: String? = nil) async throws -> String {
         let answer: DisplayName = try await call(
@@ -1321,3 +1328,5 @@ extension EdgeFunctions {
             "calendar-phone", body: PhoneWrittenAsk(deviceId: deviceId, reports: reports), errorMessage: errorMessage)
     }
 }
+
+private struct PulseAnswer: Decodable { let pulse: String }

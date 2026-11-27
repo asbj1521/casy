@@ -451,6 +451,15 @@ struct MyDataScreen: View {
             }
             fact(CasyStrings.myDataLabels, model.labels.map { "\($0)" } ?? "-")
             if HomeTrips.on && Self.testing { TripsTesting() }
+            if LivePulse.on && Self.testing {
+                // How the app hears others' changes now (#202): live, or asking on its own.
+                Text(verbatim: "live updates: \(LivePulse.shared.status)")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+            }
             fact(CasyStrings.myDataAiCalls, "\(data.ai.calls)")
         }
     }

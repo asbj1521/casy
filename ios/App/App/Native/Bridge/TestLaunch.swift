@@ -30,6 +30,8 @@
         static var path: String? { defaults.string(forKey: "casyOpenPath") }
         /// `-casyAsks YES`: the app decides when to ask for notifications and a rating (#202).
         static var asks: Bool { defaults.bool(forKey: "casyAsks") }
+        /// `-casyLive YES`: the app listens for others' changes itself (#202), on the fake backend's socket.
+        static var live: Bool { defaults.bool(forKey: "casyLive") }
         static var pushPermission: String? { defaults.string(forKey: "casyPushPermission") }
         /// `-casyPushAnswer <granted|denied|failed>`: how turning notifications on goes, without the page.
         static var pushAnswer: String? { defaults.string(forKey: "casyPushAnswer") }

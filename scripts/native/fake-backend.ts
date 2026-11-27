@@ -13,12 +13,20 @@
  * app too old, so the page asks it to update (#281), and `{ phoneCalendar:
  * { externalId, name } }` with that calendar on this phone (the app's labels, #282).
  *
+ * POST /someone makes a change as someone else would (#202): a new vote from
+ * Jonas waiting for Mia's answers, the pulse moved, and a broadcast on every
+ * socket joined to a pulse topic. The socket is Realtime's, as much as
+ * the app's live pulse speaks (PulseSocket.swift): the handshake, a join let
+ * in when it carries a login, heartbeats answered, and the broadcast.
+ *
  * It also stands in for Supabase Auth (#280): the web build the parity shots
  * compare against (`npm run ios:parity`) talks to this server from the app's
  * page, so it answers Mia's user, her token and signing out, with the CORS
  * headers a page on capacitor://localhost needs.
  */
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
+import type { Duplex } from "node:stream";
 import process from "node:process";
 
 import { addReviews } from "../../e2e/adminReviews";
@@ -44,6 +52,20 @@ createServer((request, response) => {
     };
     if (request.method === "OPTIONS") return send(204);
     const text = Buffer.concat(chunks).toString();
+    if (url.pathname === "/someone") {
+      const vote = backend.world.events.find((e) => e.id === "ev-boardgames");
+      if (vote) {
+        backend.world.events.push({
+          ...structuredClone(vote),
+          id: "ev-live",
+          title: "Padel",
+          candidates: vote.candidates.map((c) => ({ ...c, id: `${c.id}-live` })),
+        });
+      }
+      backend.world.version++;
+      broadcastPulse();
+      return send(200, {});
+    }
     if (url.pathname === "/reset") {
       const seed = (text ? JSON.parse(text) : {}) as {
         friends?: typeof backend.world.friends;
@@ -110,4 +132,122 @@ createServer((request, response) => {
       typeof body.action === "string" && SLOW.has(body.action) ? PAUSE_MS : 0,
     );
   });
-}).listen(PORT, () => console.log(`fake backend on ${PORT}`));
+})
+  .on("upgrade", (request, socket: Duplex) => {
+    const key = request.headers["sec-websocket-key"];
+    if (!request.url?.startsWith("/realtime/v1/websocket") || typeof key !== "string") {
+      socket.destroy();
+      return;
+    }
+    const accept = createHash("sha1")
+      .update(`${key}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`)
+      .digest("base64");
+    socket.write(
+      "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n" +
+        `Sec-WebSocket-Accept: ${accept}\r\n\r\n`,
+    );
+    const live: LiveSocket = { socket, topics: new Set() };
+    sockets.add(live);
+    let pending = Buffer.alloc(0);
+    socket.on("data", (chunk: Buffer) => {
+      pending = Buffer.concat([pending, chunk]);
+      for (;;) {
+        const frame = readFrame(pending);
+        if (!frame) break;
+        pending = pending.subarray(frame.length);
+        if (frame.opcode === 8) {
+          socket.end();
+          return;
+        }
+        if (frame.opcode === 1 || frame.opcode === 2) answerSocket(live, frame.payload.toString());
+      }
+    });
+    socket.on("close", () => sockets.delete(live));
+    socket.on("error", () => sockets.delete(live));
+  })
+  .listen(PORT, () => console.log(`fake backend on ${PORT}`));
+
+interface LiveSocket {
+  socket: Duplex;
+  topics: Set<string>;
+}
+
+const sockets = new Set<LiveSocket>();
+
+/** One frame from a client (always masked), or nothing until it has all arrived. */
+function readFrame(data: Buffer): { opcode: number; payload: Buffer; length: number } | null {
+  if (data.length < 2) return null;
+  const opcode = data[0] & 0x0f;
+  let size = data[1] & 0x7f;
+  let offset = 2;
+  if (size === 126) {
+    if (data.length < 4) return null;
+    size = data.readUInt16BE(2);
+    offset = 4;
+  } else if (size === 127) {
+    if (data.length < 10) return null;
+    size = Number(data.readBigUInt64BE(2));
+    offset = 10;
+  }
+  const masked = (data[1] & 0x80) !== 0;
+  const mask = masked ? data.subarray(offset, offset + 4) : null;
+  if (masked) offset += 4;
+  if (data.length < offset + size) return null;
+  const payload = Buffer.from(data.subarray(offset, offset + size));
+  if (mask) for (let i = 0; i < payload.length; i++) payload[i] ^= mask[i % 4];
+  return { opcode, payload, length: offset + size };
+}
+
+function sendText(socket: Duplex, text: string) {
+  const body = Buffer.from(text);
+  const head =
+    body.length < 126
+      ? Buffer.from([0x81, body.length])
+      : Buffer.from([0x81, 126, body.length >> 8, body.length & 0xff]);
+  socket.write(Buffer.concat([head, body]));
+}
+
+/** Realtime's answers: a join with a login let in, a heartbeat answered. */
+function answerSocket(live: LiveSocket, text: string) {
+  const message = JSON.parse(text) as {
+    topic: string;
+    event: string;
+    payload: { access_token?: string };
+    ref: string | null;
+    join_ref?: string;
+  };
+  const reply = (status: string) =>
+    sendText(
+      live.socket,
+      JSON.stringify({
+        topic: message.topic,
+        event: "phx_reply",
+        payload: { status, response: {} },
+        ref: message.ref,
+        join_ref: message.join_ref ?? message.ref,
+      }),
+    );
+  if (message.event === "phx_join") {
+    if (!message.payload.access_token) return reply("error");
+    live.topics.add(message.topic);
+    return reply("ok");
+  }
+  if (message.event === "heartbeat") reply("ok");
+}
+
+/** Every pulse topic joined told something changed (a test's app may be Mia or "test-user"). */
+function broadcastPulse() {
+  for (const live of sockets) {
+    const topic = [...live.topics].find((t) => t.startsWith("realtime:pulse:"));
+    if (!topic) continue;
+    sendText(
+      live.socket,
+      JSON.stringify({
+        topic,
+        event: "broadcast",
+        payload: { type: "broadcast", event: "pulse", payload: {} },
+        ref: null,
+      }),
+    );
+  }
+}

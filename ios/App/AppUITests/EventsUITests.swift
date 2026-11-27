@@ -11,9 +11,9 @@ final class EventsUITests: XCTestCase {
         _ = try await URLSession.shared.data(for: reset)
     }
 
-    private func launch() -> XCUIApplication {
+    private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = [
+        app.launchArguments = extra + [
             "-casyBackend", testBackend,
             "-casyOpenScreen", "events",
             "-casyPushPermission", "granted",
@@ -27,6 +27,20 @@ final class EventsUITests: XCTestCase {
 
     private func row(_ app: XCUIApplication, _ title: String) -> XCUIElement {
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", title)).firstMatch
+    }
+
+    /// Someone else's new vote shows up by itself (#202): the app hears it on
+    /// Realtime, the pulse has moved, and the list is fetched again.
+    @MainActor func testSomeoneElsesVoteArrivesByItself() async throws {
+        let app = launch(["-casyLive", "YES"])
+        XCTAssertTrue(row(app, "Brætspilsaften").waitForExistence(timeout: 10))
+        XCTAssertFalse(row(app, "Padel").exists)
+        // Joined before the change, so it is heard rather than polled.
+        try await Task.sleep(for: .seconds(2))
+        var poke = URLRequest(url: URL(string: "\(testBackend)/someone")!)
+        poke.httpMethod = "POST"
+        _ = try await URLSession.shared.data(for: poke)
+        XCTAssertTrue(row(app, "Padel").waitForExistence(timeout: 4))
     }
 
     /// What needs you, what is to come and what is over, each with its group.
