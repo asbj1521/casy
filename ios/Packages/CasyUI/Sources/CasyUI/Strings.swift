@@ -239,6 +239,9 @@ public enum CasyStrings {
     public static func friendsRemoveAsk(_ value: String) -> String { String(format: text("friends.removeAsk"), value) }
     public static var friendsFailed: String { text("friends.failed") }
     public static var friendLinkAdd: String { text("friendLink.add") }
+    public static var weakPasswordMessage: String { text("weakPasswordNotice.message") }
+    public static var weakPasswordAction: String { text("weakPasswordNotice.action") }
+    public static var weakPasswordDismiss: String { text("weakPasswordNotice.dismiss") }
     public static func friendLinkAsks(_ name: String) -> String { String(format: text("friendLink.asks"), name) }
     public static var friendLinkAsksAnon: String { text("friendLink.asksAnon") }
     public static var friendLinkDetail: String { text("friendLink.detail") }

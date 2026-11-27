@@ -280,10 +280,10 @@ final class HomeUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForExistence(timeout: 10))
         XCTAssertEqual(pressed(app), "path /events: opened")
         app.terminate()
-        app = launch(["-casyOpenPath", "/groups"])
+        app = launch(["-casyOpenPath", "/privacy"])
         XCTAssertTrue(app.staticTexts["home.lastAction"].waitForExistence(timeout: 10))
         let label = app.staticTexts["home.lastAction"]
-        expectation(for: NSPredicate(format: "label == %@", "path /groups: the page's"), evaluatedWith: label)
+        expectation(for: NSPredicate(format: "label == %@", "path /privacy: the page's"), evaluatedWith: label)
         waitForExpectations(timeout: 10)
     }
 
@@ -294,10 +294,10 @@ final class HomeUITests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Mine aftaler"].waitForExistence(timeout: 10))
         XCTAssertEqual(pressed(app), "push /events: opened")
         app.terminate()
-        app = launch(["-casyPush", "YES", "-casyPushTap", "/groups"])
+        app = launch(["-casyPush", "YES", "-casyPushTap", "/privacy"])
         let label = app.staticTexts["home.lastAction"]
         XCTAssertTrue(label.waitForExistence(timeout: 10))
-        expectation(for: NSPredicate(format: "label == %@", "push /groups: the page's"), evaluatedWith: label)
+        expectation(for: NSPredicate(format: "label == %@", "push /privacy: the page's"), evaluatedWith: label)
         waitForExpectations(timeout: 10)
     }
 
@@ -332,5 +332,26 @@ final class HomeUITests: XCTestCase {
         let back = NSPredicate(format: "label == %@", "Oktober")
         expectation(for: back, evaluatedWith: title(app))
         waitForExpectations(timeout: 5)
+    }
+
+    /// Signed in with a password weaker than today's rules (#147): the note over
+    /// the home page leads to Sikkerhed with the new password's form open.
+    func testAWeakPasswordsNoteLeadsToANewOne() {
+        let app = launch(["-casyWeakPassword", "YES"])
+        let note = app.descendants(matching: .any)["weakPassword.note"]
+        XCTAssertTrue(note.waitForExistence(timeout: 10))
+        let choose = app.links["Vælg en ny"]
+        XCTAssertTrue(choose.waitForExistence(timeout: 5))
+        choose.tap()
+        XCTAssertTrue(app.secureTextFields["security.newPassword"].waitForExistence(timeout: 15), "the form, open")
+    }
+
+    /// Luk puts it away.
+    func testAWeakPasswordsNoteCanBeClosed() {
+        let app = launch(["-casyWeakPassword", "YES"])
+        let note = app.descendants(matching: .any)["weakPassword.note"]
+        XCTAssertTrue(note.waitForExistence(timeout: 10))
+        app.buttons["weakPassword.dismiss"].tap()
+        XCTAssertTrue(note.waitForNonExistence(timeout: 5))
     }
 }

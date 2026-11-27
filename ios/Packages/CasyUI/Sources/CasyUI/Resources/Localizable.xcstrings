@@ -5339,6 +5339,57 @@
         }
       }
     },
+    "weakPasswordNotice.message": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Din adgangskode er nemmere at gætte, end vi tillader nu."
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your password is easier to guess than we now allow."
+          }
+        }
+      }
+    },
+    "weakPasswordNotice.action": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vælg en ny"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a new one"
+          }
+        }
+      }
+    },
+    "weakPasswordNotice.dismiss": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Luk"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dismiss"
+          }
+        }
+      }
+    },
     "words.guessed": {
       "extractionState": "manual",
       "localizations": {

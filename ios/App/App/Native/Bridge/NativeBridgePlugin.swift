@@ -268,6 +268,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             // Every test starts on one day: the 1/2 day choice is kept on the phone,
             // and a test that left it on two would turn the next test's days by two.
             UserDefaults.standard.removeObject(forKey: "casy.daySpan")
+            // `-casyWeakPassword YES`: signed in with a password weaker than today's rules.
+            if UserDefaults.standard.bool(forKey: "casyWeakPassword") { WeakPassword.shared.flag() }
             // Nor did an earlier test's ask count against this one's.
             Asks.shared.forget()
             // No animations under test: a sheet or a push is there at once, and
@@ -448,6 +450,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             if PageFree.on {
                 NativePreferences.shared.lang = lang
                 NativePreferences.shared.theme = theme
+                AppSession.shared.keepLanguage()
             }
             self?.notifyListeners("preferences", data: ["lang": lang, "theme": theme])
         }
@@ -578,8 +581,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 ProfileScreen(
                     preferences: NativePreferences.shared, build: build, userAgent: userAgent,
                     onChoose: onChoose, onDone: onDone, enablePush: enablePush, leave: leave,
-                    start: (state["group"] as? String).map(ProfileStart.group)
-                        ?? (state["friends"] as? Bool == true ? .friends : nil)))
+                    start: ProfileStart(state["start"] as? String)))
             : AnyView(
                 SettingsScreen(
                     preferences: NativePreferences.shared, onChoose: onChoose, onDone: onDone,
@@ -1213,14 +1215,15 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
     /// that group or Venner, whoever opened the screen before it.
     private func openProfileOn(_ then: [String: Any]) -> Bool {
         guard let presenter = bridge?.viewController, Self.nativeScreens.contains("profile") else { return false }
-        let state: [String: Any]
+        let start: ProfileStart
         if let group = then["group"] as? String {
-            state = ["group": group]
+            start = .group(group)
         } else if then["friendAdded"] as? Bool == true {
-            state = ["friends": true]
+            start = .friends
         } else {
             return false
         }
+        let state: [String: Any] = ["start": start.text]
         openedHere = true
         present("profile", on: presenter, build: pageBuild, userAgent: pageUserAgent, state: state)
         return true
@@ -1270,6 +1273,8 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             return sheet("join", ["token": token, "signedIn": true])
         case .friend(let token):
             return sheet("friend", ["token": token, "signedIn": true])
+        case .profile(let start):
+            return sheet("profile", ["start": start])
         case .settings:
             return sheet("settings", [:])
         }
@@ -1488,6 +1493,25 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             }
         }
         AppSession.shared.start()
+        UpdateCheck.shared.show = { [weak self] store in self?.showUpdate(store) }
+        UpdateCheck.shared.start()
+    }
+
+    /// "Opdater appen" over everything, whatever was open (#143): nothing else is usable now.
+    @MainActor private func showUpdate(_ store: URL?) {
+        guard let presenter = bridge?.viewController else { return }
+        let state: [String: Any] = store.map { ["storeUrl": $0.absoluteString] } ?? [:]
+        let up = { [weak self] in
+            guard let self else { return }
+            self.openScreen = nil
+            self.openedHere = true
+            self.present("update", on: presenter, build: self.pageBuild, userAgent: self.pageUserAgent, state: state)
+        }
+        if presenter.presentedViewController != nil {
+            presenter.dismiss(animated: false, completion: up)
+        } else {
+            up()
+        }
     }
 
     /// Signed in, the app's home page; signed out, the welcome over everything.

@@ -110,6 +110,10 @@
             if let path = defaults.string(forKey: "casyWebPath") {
                 fresh.append("history.replaceState(null, \"\", \(literal(path)));")
             }
+            // `-casyWeakPassword YES`: the page's note about a weak password (weakPassword.ts), for Mia.
+            if defaults.bool(forKey: "casyWeakPassword"), let id = webPerson?.id {
+                fresh.append("sessionStorage.setItem(\"casy-weak-password\", \(literal(id)));")
+            }
             fresh.append("sessionStorage.setItem(\"parity-seeded\", \"1\");")
             lines.append(
                 "if (!sessionStorage.getItem(\"parity-seeded\")) {\n  \(fresh.joined(separator: "\n  "))\n}")

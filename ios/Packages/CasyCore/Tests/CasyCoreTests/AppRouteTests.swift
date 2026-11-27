@@ -10,9 +10,12 @@ import Testing
     #expect(appRoute("/friend/t") == .friend("t"))
     #expect(appRoute("/events?x=1") == .events(nil))
     #expect(appRoute("/profile/settings") == .settings)
+    #expect(appRoute("/groups") == .profile("groups"))
+    #expect(appRoute("/groups/g-1") == .profile("group:g-1"))
+    #expect(appRoute("/invited/g-1") == .profile("invitation:g-1"))
+    #expect(appRoute("/profile/friends") == .profile("friends"))
+    #expect(appRoute("/profile/password?password=new") == .profile("newPassword"))
     // Still the page's.
-    #expect(appRoute("/groups") == nil)
-    #expect(appRoute("/invited/g-1") == nil)
     #expect(appRoute("/privacy") == nil)
     #expect(appRoute("events") == nil)
 }

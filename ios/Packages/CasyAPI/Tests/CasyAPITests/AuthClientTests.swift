@@ -26,6 +26,7 @@ private struct Wire: HTTPTransport {
 private let session = """
     {"access_token":"at","token_type":"bearer","expires_in":3600,"expires_at":1800000000,
      "refresh_token":"rt","user":{"id":"u1","email":"mia@example.com","created_at":"2026-01-01T00:00:00Z",
+     "user_metadata":{"lang":"en","full_name":"Mia"},
      "identities":[{"provider":"email"},{"provider":"apple"}]}}
     """
 
@@ -50,6 +51,7 @@ private func body(_ request: URLRequest?) -> [String: Any] {
     #expect(signedIn.accessToken == "at" && signedIn.refreshToken == "rt")
     #expect(signedIn.expiresAt == Date(timeIntervalSince1970: 1_800_000_000))
     #expect(signedIn.user.id == "u1" && signedIn.user.hasApple)
+    #expect(signedIn.user.lang == "en")
     #expect(!weak)
 }
 
@@ -117,4 +119,18 @@ private func body(_ request: URLRequest?) -> [String: Any] {
     try await auth.reauthenticate(accessToken: "user")
     request = await wire.sent.last
     #expect(request?.httpMethod == "GET" && request?.url?.path == "/auth/v1/reauthenticate")
+}
+
+@Test func theAccountsLanguageIsKeptInItsData() async throws {
+    let wire = Wire(body: "{}")
+    try await client(wire).setLang("da", accessToken: "user")
+    let request = await wire.sent.last
+    #expect(request?.httpMethod == "PUT" && request?.url?.path == "/auth/v1/user")
+    #expect((body(request)["data"] as? [String: Any])?["lang"] as? String == "da")
+}
+
+@Test func aLoginKeptBeforeTheLanguageWasStillReads() throws {
+    let old = #"{"accessToken":"a","refreshToken":"r","expiresAt":0,"user":{"id":"u1","providers":["email"]}}"#
+    let session = try JSONDecoder().decode(AuthSession.self, from: Data(old.utf8))
+    #expect(session.user.lang == nil)
 }

@@ -1,4 +1,5 @@
 import CasyAPI
+import CasyUI
 import Foundation
 import Security
 import UIKit
@@ -166,10 +167,28 @@ final class AppSession {
         Task { await SessionBox.shared.set(connection(next)) }
         changed(next)
         schedule()
+        keepLanguage()
+    }
+
+    /// The account's language kept the same as the app's (the web's useAccountLanguage),
+    /// for the emails Supabase sends with no page to ask. Only when they differ; a
+    /// failure is tried again at the next login.
+    func keepLanguage() {
+        guard let session, let auth, session.user.lang != CasyStrings.language else { return }
+        let lang = CasyStrings.language
+        Task {
+            guard (try? await auth.setLang(lang, accessToken: session.accessToken)) != nil,
+                var now = self.session, now.user.id == session.user.id
+            else { return }
+            now.user.lang = lang
+            self.session = now
+            SessionKeychain.save(now)
+        }
     }
 
     /// Signed out here: forgotten everywhere on this phone.
     func forget() {
+        WeakPassword.shared.clear()
         timer?.cancel()
         session = nil
         SessionKeychain.delete()

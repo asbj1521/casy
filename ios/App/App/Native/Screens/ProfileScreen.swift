@@ -121,11 +121,87 @@ enum LeavingProfile {
     case findDates
 }
 
-/// A screen inside Profil the sheet opens on: where a friend link or an
-/// invite for a group you are in leads (#202).
+/// A screen inside Profil the sheet opens on (#202): where a friend link, an
+/// invite for a group you are in, or a notification about a group leads.
 enum ProfileStart: Hashable {
     case friends
+    case groups
     case group(String)
+    /// An invitation to the group, waiting for your answer.
+    case invitation(String)
+    /// Sikkerhed with the new password's form open (the weak password's note, `/profile/password?password=new`).
+    case newPassword
+
+    /// As the bridge's state names it: "friends", "groups", "group:<id>", "invitation:<id>".
+    init?(_ text: String?) {
+        guard let text else { return nil }
+        let parts = text.split(separator: ":", maxSplits: 1).map(String.init)
+        switch (parts.first, parts.count) {
+        case ("friends", 1): self = .friends
+        case ("groups", 1): self = .groups
+        case ("group", 2): self = .group(parts[1])
+        case ("invitation", 2): self = .invitation(parts[1])
+        case ("newPassword", 1): self = .newPassword
+        default: return nil
+        }
+    }
+
+    var text: String {
+        switch self {
+        case .friends: "friends"
+        case .groups: "groups"
+        case .group(let id): "group:\(id)"
+        case .invitation(let id): "invitation:\(id)"
+        case .newPassword: "newPassword"
+        }
+    }
+}
+
+/// The screen Profil opened on, once your groups are known: a group's screen
+/// goes straight back without its group, and an invitation is looked up in
+/// them. A group and an invitation open over Grupper, the way back the web's
+/// leads too (`parentScreen`).
+private struct StartScreen: View {
+    let start: ProfileStart
+    let leave: (LeavingProfile) -> Void
+
+    private let model = GroupsModel.shared
+    @State private var ready = false
+    @State private var inside: ProfileStart?
+
+    var body: some View {
+        ZStack {
+            if ready {
+                switch start {
+                case .friends: FriendsScreen()
+                default:
+                    GroupsScreen(leave: leave)
+                        .navigationDestination(item: $inside) { inner in
+                            switch inner {
+                            case .invitation(let id):
+                                if let i = model.invitations.firstIndex(where: { $0.groupId == id }) {
+                                    InvitationScreen(invitation: model.invitations[i], index: i, leave: leave)
+                                }
+                            case .group(let id): GroupScreen(groupId: id)
+                            default: EmptyView()
+                            }
+                        }
+                }
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .task {
+            if model.groups == nil { await model.load() }
+            ready = true
+            switch start {
+            case .group: inside = start
+            // Answered already, here or on another phone: Grupper, where it went.
+            case .invitation(let id) where model.invitations.contains(where: { $0.groupId == id }): inside = start
+            default: break
+            }
+        }
+    }
 }
 
 /// The Profil list as a native screen (#198), `ProfileHubList` on the web.
@@ -274,9 +350,10 @@ struct ProfileScreen: View {
                 }
             }
             .navigationDestination(item: $opened) { start in
-                switch start {
-                case .friends: FriendsScreen()
-                case .group(let id): GroupScreen(groupId: id)
+                if start == .newPassword {
+                    SecurityScreen(email: model.email ?? "", name: name, signedOutEverywhere: onDone, newPassword: true)
+                } else {
+                    StartScreen(start: start, leave: leave)
                 }
             }
             .onAppear {

@@ -145,6 +145,13 @@ struct HomeScreen: View {
         .overlay {
             if model.loading { ProgressView() }
         }
+        // Over everything, as the web's fixed note (z-100): a password weaker than today's rules.
+        .overlay(alignment: .top) {
+            if WeakPassword.shared.flagged {
+                WeakPasswordNote { PushWork.shared.open("/profile/password?password=new") }
+                    .transition(.opacity)
+            }
+        }
         .overlay(alignment: .center) {
             #if DEBUG
                 if TestLaunch.isActive {

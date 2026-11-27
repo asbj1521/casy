@@ -254,10 +254,48 @@ final class GroupsUITests: XCTestCase {
         name.tap()
         name.typeText("Brætspil")
         next.tap()
+        // The iPhone 17e simulator's keyboard can swallow the first tap after typing (TellUITests).
+        if !app.navigationBars["Invitér til Brætspil"].waitForExistence(timeout: 3), next.exists { next.tap() }
         XCTAssertTrue(app.navigationBars["Invitér til Brætspil"].waitForExistence(timeout: 10))
         // The invite sheet's own Færdig: Grupper's under it has one too (design rule 11).
         app.navigationBars["Invitér til Brætspil"].buttons["Færdig"].tap()
         XCTAssertTrue(row(app, "Brætspil").waitForExistence(timeout: 10))
     }
-}
 
+    // MARK: Profil opened on a screen (#202: a notification's or a link's address)
+
+    private func openProfile(on start: String) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-casyBackend", testBackend,
+            "-casyOpenScreen", "profile:\(start)",
+            "-casyPushPermission", "granted",
+            "-casyLang", "da",
+        ]
+        app.launch()
+        return app
+    }
+
+    /// `/groups/<id>`: the group itself, with Grupper under it to go back to, as on the web.
+    func testProfilOpensOnAGroup() {
+        let app = openProfile(on: "group:g-friday")
+        XCTAssertTrue(
+            app.staticTexts["En øl efter arbejde, når det passer de fleste"].waitForExistence(timeout: 20),
+            "the group, though Grupper was never opened")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.navigationBars["Grupper"].waitForExistence(timeout: 10), "Grupper under it")
+    }
+
+    /// `/invited/<id>`: the invitation, to answer at once.
+    func testProfilOpensOnAnInvitation() {
+        let app = openProfile(on: "invitation:g-badminton")
+        XCTAssertTrue(app.staticTexts["Sara har inviteret dig til"].waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["Bliv medlem"].exists)
+    }
+
+    /// An invitation answered already (on another phone): Grupper, where it went.
+    func testAnAnsweredInvitationOpensGrupper() {
+        let app = openProfile(on: "invitation:g-gone")
+        XCTAssertTrue(app.navigationBars["Grupper"].waitForExistence(timeout: 20))
+    }
+}

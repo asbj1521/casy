@@ -1,8 +1,9 @@
 import XCTest
 
-/// The page's login carried over to the app (#202): someone signed in on the
-/// page before the app owned its login stays signed in once the page is gone,
-/// and the page's copy is removed as it is taken, so the two never refresh it both.
+/// The app without its page (#202). The page's login carried over: someone
+/// signed in on the page before the app owned its login stays signed in once
+/// the page is gone, and the page's copy is removed as it is taken, so the two
+/// never refresh it both. And the app asks itself whether it is too old.
 final class PageLoginUITests: XCTestCase {
     override func setUp() async throws {
         continueAfterFailure = false
@@ -40,6 +41,17 @@ final class PageLoginUITests: XCTestCase {
         // 3. The app's login forgotten again: the page's was removed as it was taken.
         app = launch(["-casy.pageFree", "YES", "-casyForgetLogin", "YES"])
         XCTAssertTrue(welcome.waitForExistence(timeout: 15), "nothing left in the page to take")
+        app.terminate()
+    }
+
+    /// Too old, with no page to say so: "Opdater appen" over everything.
+    @MainActor func testWithoutThePageTheAppSaysWhenItIsTooOld() async throws {
+        var reset = URLRequest(url: URL(string: "\(testBackend)/reset")!)
+        reset.httpMethod = "POST"
+        reset.httpBody = Data(#"{"outdated":true}"#.utf8)
+        _ = try await URLSession.shared.data(for: reset)
+        let app = launch(["-casy.pageFree", "YES"])
+        XCTAssertTrue(app.descendants(matching: .any)["update.screen"].waitForExistence(timeout: 20))
         app.terminate()
     }
 }

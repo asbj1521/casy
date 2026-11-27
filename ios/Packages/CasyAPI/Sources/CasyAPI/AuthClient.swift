@@ -30,12 +30,16 @@ public struct AuthUser: Codable, Sendable, Equatable {
     public var createdAt: String?
     /// The providers of its identities ("email", "apple").
     public var providers: [String]
+    /// The language kept on the account (`user_metadata.lang`), for the emails
+    /// Supabase sends with no page to ask (the auth-email hook reads it).
+    public var lang: String?
 
-    public init(id: String, email: String?, createdAt: String?, providers: [String]) {
+    public init(id: String, email: String?, createdAt: String?, providers: [String], lang: String? = nil) {
         self.id = id
         self.email = email
         self.createdAt = createdAt
         self.providers = providers
+        self.lang = lang
     }
 
     public var hasApple: Bool { providers.contains("apple") }
@@ -171,6 +175,11 @@ public struct AuthClient: Sendable {
         _ = try await send("PUT", "user", body: ["data": ["full_name": name]], token: accessToken)
     }
 
+    /// The language kept on the account, as the web's useAccountLanguage keeps it.
+    public func setLang(_ lang: String, accessToken: String) async throws {
+        _ = try await send("PUT", "user", body: ["data": ["lang": lang]], token: accessToken)
+    }
+
     /// A code emailed for changing the password.
     public func reauthenticate(accessToken: String) async throws {
         _ = try await send("GET", "reauthenticate", token: accessToken)
@@ -244,6 +253,7 @@ public struct AuthClient: Sendable {
         let identities = (json["identities"] as? [[String: Any]]) ?? []
         return AuthUser(
             id: id, email: json["email"] as? String, createdAt: json["created_at"] as? String,
-            providers: identities.compactMap { $0["provider"] as? String })
+            providers: identities.compactMap { $0["provider"] as? String },
+            lang: (json["user_metadata"] as? [String: Any])?["lang"] as? String)
     }
 }

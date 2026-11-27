@@ -29,6 +29,7 @@ import pictureCropFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTes
 import phoneBusyFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/phoneBusy.json?raw";
 import paperPileFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/paperPile.json?raw";
 import appLinksFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/appLinks.json?raw";
+import appVersionFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/appVersion.json?raw";
 import eventLabelsFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/eventLabels.json?raw";
 import autoCategorizeFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/autoCategorize.json?raw";
 import tripLegBookFixture from "../../../ios/Packages/CasyCore/Tests/CasyCoreTests/Parity/tripLegBook.json?raw";
@@ -58,6 +59,7 @@ import { phoneBusyCases } from "./phoneBusy.cases";
 import { zoneCases } from "./zone.cases";
 import { paperPileCases } from "./paperPile.cases";
 import { appLinksCases } from "./appLinks.cases";
+import { appVersionCases } from "./appVersion.cases";
 import { eventLabelsCases } from "./eventLabels.cases";
 import { autoCategorizeCases } from "./autoCategorize.cases";
 import { tripLegBookCases } from "./tripLegBook.cases";
@@ -93,6 +95,7 @@ describe.each([
   ["earlyMorning", earlyMorningCases(), earlyMorningFixture],
   ["paperPile", paperPileCases(), paperPileFixture],
   ["appLinks", appLinksCases(), appLinksFixture],
+  ["appVersion", appVersionCases(), appVersionFixture],
   ["eventLabels", eventLabelsCases(), eventLabelsFixture],
   ["autoCategorize", autoCategorizeCases(), autoCategorizeFixture],
   ["tripLegBook", tripLegBookCases(), tripLegBookFixture],

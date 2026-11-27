@@ -19,10 +19,14 @@ public enum AppRoute: Equatable, Sendable {
     case friend(String)
     /// Indstillinger (`/profile/settings`, the admin's test notification).
     case settings
+    /// Profil on one of its screens, as ProfileStart names it: Grupper
+    /// (`/groups`, "groups"), a group (`/groups/<id>`, "group:<id>"), an
+    /// invitation waiting for you (`/invited/<id>`, "invitation:<id>").
+    case profile(String)
 }
 
 /// The app's screen for an in-app path, or nil when the page still has it
-/// (Grupper, an invitation, any other page).
+/// (any other page).
 public func appRoute(_ path: String) -> AppRoute? {
     let bare = path.split(separator: "?", maxSplits: 1, omittingEmptySubsequences: false).first.map(String.init) ?? path
     let parts = bare.split(separator: "/").map(String.init)
@@ -36,6 +40,12 @@ public func appRoute(_ path: String) -> AppRoute? {
     case 2 where parts[0] == "join": return .join(parts[1])
     case 2 where parts[0] == "friend": return .friend(parts[1])
     case 2 where parts == ["profile", "settings"]: return .settings
+    case 1 where parts[0] == "groups": return .profile("groups")
+    case 2 where parts == ["profile", "friends"]: return .profile("friends")
+    // The weak password's note (`?password=new`) and the old address of Sikkerhed.
+    case 2 where parts == ["profile", "password"]: return .profile("newPassword")
+    case 2 where parts[0] == "groups": return .profile("group:\(parts[1])")
+    case 2 where parts[0] == "invited": return .profile("invitation:\(parts[1])")
     case 3 where parts[0] == "events" && parts[2] == "dates": return .vote(parts[1])
     default: return nil
     }

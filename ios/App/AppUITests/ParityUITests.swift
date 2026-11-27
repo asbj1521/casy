@@ -948,6 +948,20 @@ final class ParityUITests: XCTestCase {
 
     func testPushDark() async throws { try await shootPush(theme: "dark") }
 
+    // MARK: A weak password's note (#147, #202)
+
+    /// Signed in with a password weaker than today's rules: the note over the
+    /// home page, the page's in web mode, the app's over its native home.
+    private func shootWeakPassword(theme: String) async throws {
+        let app = try await launch("/", theme: theme, extra: ["-casyWeakPassword", "YES"])
+        shoot(
+            app, "weak-password-\(theme)", when: "Din adgangskode er nemmere", native: "weakPassword.note", tappable: false)
+    }
+
+    func testWeakPasswordLight() async throws { try await shootWeakPassword(theme: "light") }
+
+    func testWeakPasswordDark() async throws { try await shootWeakPassword(theme: "dark") }
+
     // MARK: Opdater (#281)
 
     /// An app too old: every app is after a reset with `{ outdated: true }`,

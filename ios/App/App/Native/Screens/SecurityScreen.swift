@@ -13,11 +13,14 @@ struct SecurityScreen: View {
     let name: String
     /// Signed out on every device: the sheet goes, the page shows the welcome.
     let signedOutEverywhere: () -> Void
+    /// Opened for a new password (the weak password's note): its form open at once.
+    var newPassword = false
 
     @Environment(\.closeSheet) private var closeSheet
     @Environment(\.colorScheme) private var scheme
 
     @State private var formOpen = false
+    @State private var formOpenedOnce = false
     @State private var password = ""
     @State private var confirm = ""
     /// A new password waiting for the emailed code.
@@ -47,6 +50,11 @@ struct SecurityScreen: View {
         .background(Theme.background.color)
         .casyPushedBar(CasyStrings.profileSecurity, close: CasyStrings.done, action: closeSheet)
         .accessibilityIdentifier("security.screen")
+        .onAppear {
+            guard newPassword, !formOpenedOnce else { return }
+            formOpenedOnce = true
+            formOpen = true
+        }
         .task {
             let answer = await PageAuth.shared.ask("appleLinked")
             if answer.outcome == "done" { appleLinked = answer.count == 1 }
@@ -240,6 +248,7 @@ struct SecurityScreen: View {
             confirm = ""
             formOpen = false
             saved = true
+            WeakPassword.shared.clear()
         case "code":
             codeResent = false
             codeFor = newPassword

@@ -761,3 +761,9 @@ public struct SyncResult: Codable, Sendable, Equatable {
 public struct SyncAnswer: Codable, Sendable, Equatable {
     public var results: [SyncResult]
 }
+
+/// The oldest app release Casy still works with, and where to get a newer one (#143).
+public struct AppVersionInfo: Codable, Sendable, Equatable {
+    public var minVersion: String?
+    public var storeUrl: String?
+}

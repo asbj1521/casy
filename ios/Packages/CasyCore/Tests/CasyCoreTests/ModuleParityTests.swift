@@ -842,6 +842,16 @@ private func localDay(_ iso: String) -> Int {
     }
 }
 
+@Test func appVersionGivesTheTypeScriptAnswers() throws {
+    try check("appVersion", atLeast: 20) { fn, a in
+        switch fn {
+        case "parse": return try json(parseVersion(try text(a, "version")))
+        case "outdated": return try json(isOutdated(try text(a, "current"), a["minimum"].string))
+        default: return unknown(fn)
+        }
+    }
+}
+
 @Test func eventLabelsGiveTheTypeScriptAnswers() throws {
     try check("eventLabels", atLeast: 400) { fn, a in
         switch fn {

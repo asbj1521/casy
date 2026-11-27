@@ -27,8 +27,14 @@ final class AppAuth: NSObject {
         do {
             switch action {
             case "password":
-                let (signedIn, _) = try await auth.signIn(email: email, password: password)
+                let (signedIn, weak) = try await auth.signIn(email: email, password: password)
                 session.adopt(signedIn)
+                // A password chosen before today's rules is flagged, as the web's sign-in does.
+                if weak {
+                    WeakPassword.shared.flag()
+                } else {
+                    Task { if let times = await Self.timesLeaked(password), times > 0 { WeakPassword.shared.flag() } }
+                }
                 return AuthAnswer(outcome: "in")
             case "signUp":
                 switch try await auth.signUp(

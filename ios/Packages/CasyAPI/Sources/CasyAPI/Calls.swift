@@ -778,6 +778,11 @@ extension EdgeFunctions {
         try await call("groups", body: FriendLink(), errorMessage: errorMessage)
     }
 
+    /// The oldest app release still worked with, and the App Store page (#143); public, no login needed.
+    public func appVersion() async throws -> AppVersionInfo {
+        try await call("app-version")
+    }
+
     /// Who made a friend link, for its page before anyone signs in (`previewFriend`).
     public func previewFriend(_ token: String, errorMessage: String? = nil) async throws -> FriendPreview {
         try await call("groups", body: TokenAction(action: "preview-friend", token: token), errorMessage: errorMessage)
