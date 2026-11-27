@@ -48,13 +48,21 @@ extension View {
     }
 }
 
-/// How a pressed capsule answers: a small shrink, as on the web.
+/// How a pressed capsule answers: a small shrink, as on the web. Not on
+/// iOS 26's glass, whose own answer (it swells, lights and springs back, the
+/// liquid part) is Apple's: a shrink of ours on top fought it and cut it short.
 private struct PressStyle: ButtonStyle {
     let scale: CGFloat
+    /// The capsule is interactive glass.
+    var glass = true
 
     func makeBody(configuration: Configuration) -> some View {
+        let shrinks: Bool = {
+            if #available(iOS 26, macOS 26, *) { return !glass }
+            return true
+        }()
         configuration.label
-            .scaleEffect(configuration.isPressed ? scale : 1)
+            .scaleEffect(shrinks && configuration.isPressed ? scale : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
 }
@@ -118,7 +126,7 @@ public struct FlowButton<Label: View>: View {
             .modifier(GlassUnlessSolid(solid: kind == .solid))
             .opacity(isEnabled && !busy ? 1 : 0.5)
         }
-        .buttonStyle(PressStyle(scale: 0.98))
+        .buttonStyle(PressStyle(scale: 0.98, glass: kind != .solid))
         .disabled(busy)
     }
 }
