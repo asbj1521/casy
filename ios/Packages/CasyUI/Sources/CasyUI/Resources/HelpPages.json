@@ -590,7 +590,7 @@
   "privacy": {
     "da": {
       "title": "Privatlivspolitik",
-      "updated": "Senest opdateret 13. november 2026",
+      "updated": "Senest opdateret 27. november 2026",
       "sections": [
         {
           "title": "Kort fortalt",
@@ -639,7 +639,7 @@
               "text": "Har du valgt en primær kalender, bruger vi din adgang til den til at lægge aftaler, I er blevet enige om, i den: når du trykker Tilføj til min kalender, eller af sig selv, hvis du har slået Tilføj automatisk til. Aftalen får aftalens navn, gruppens navn og navnene på de andre, der er med. Bliver aftalen aflyst, fjerner vi den igen. Vi ændrer eller sletter aldrig andre aftaler i din kalender. Indtil videre kan det lade sig gøre med Apple-kalendere og med kalenderne på din telefon i iPhone-appen. Dem lægger appen selv aftalerne i, når den er åben eller arbejder i baggrunden, og hver aftale får et link tilbage til aftalen i appen."
             },
             {
-              "text": "Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have I Been Pwned, en offentlig liste over adgangskoder fra kendte datalæk, så en adgangskode, der er let at gætte, bliver opdaget. Kun de første 5 tegn af en hashværdi af adgangskoden bliver sendt, og selve adgangskoden forlader aldrig din browser."
+              "text": "Når du vælger en adgangskode, eller logger ind med en, tjekker din browser eller appen den mod Have I Been Pwned, en offentlig liste over adgangskoder fra kendte datalæk, så en adgangskode, der er let at gætte, bliver opdaget. Kun de første 5 tegn af en hashværdi af adgangskoden bliver sendt, og selve adgangskoden forlader aldrig din enhed."
             },
             {
               "text": "Vores brug og overførsel af oplysninger fra Googles API'er følger [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), herunder kravene om begrænset brug (Limited Use)."
@@ -654,7 +654,7 @@
               "text": "Vores AI er Claude, en AI-model fra Anthropic. Intet sendes til Anthropic, før du har sagt ja til AI'en. Vi spørger på Min kalender og første gang, du bruger en af AI-knapperne. Du kan bruge appen uden, og du kan altid ændre dit svar under Profil, Dine data."
             },
             {
-              "text": "**Det, du selv skriver eller siger.** Vælger du Planlæg med AI, sendes det, du skriver eller siger om aftalen, til Anthropic. Med det følger dagens dato, de måneder, der kan planlægges i, og det sprog, du bruger appen på. Når du tilføjer detaljer, følger også det, du skrev før, og de indstillinger, aftalen har nu. Intet andet: ikke dine kalendere, ikke hvornår nogen er optaget, og ikke navnene på din gruppe eller dens medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og vi finder personen i gruppen i din browser. Anthropic svarer med indstillinger til aftalen, som du ser og kan rette, før noget bliver sendt til gruppen."
+              "text": "**Det, du selv skriver eller siger.** Vælger du Planlæg med AI, sendes det, du skriver eller siger om aftalen, til Anthropic. Med det følger dagens dato, de måneder, der kan planlægges i, og det sprog, du bruger appen på. Når du tilføjer detaljer, følger også det, du skrev før, og de indstillinger, aftalen har nu. Intet andet: ikke dine kalendere, ikke hvornår nogen er optaget, og ikke navnene på din gruppe eller dens medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og vi finder personen i gruppen på din enhed. Anthropic svarer med indstillinger til aftalen, som du ser og kan rette, før noget bliver sendt til gruppen."
             },
             {
               "text": "**Tilføj til kalender.** Bruger du Tilføj til kalender, sendes det, du skriver eller siger om, hvornår du er væk eller optaget, til Anthropic. Med det følger dagens dato og det sprog, du bruger appen på, og når du tilføjer detaljer, også det, du skrev før, og de tider, du ser på skærmen. Intet andet: ikke dine kalendere og ikke navne. Anthropic svarer med tider, som du ser og kan rette, før noget bliver gemt. Først når du trykker Gem, gemmer vi tiderne (se Det gemmer vi), og aldrig den sætning, du skrev eller sagde. AI'en læser intet fra din kalender for at gøre det."
@@ -731,7 +731,7 @@
           "title": "Hvor det opbevares",
           "blocks": [
             {
-              "text": "Data gemmes hos vores databaseudbyder, Supabase, og hjemmesiden leveres af Vercel. Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre fører almindelige tekniske logfiler for at drive deres tjenester. For at ingen kan få os til at sende mængder af login-e-mails, gemmer vi i et døgn, hvornår en sådan e-mail blev sendt, og en kode lavet ud fra modtagerens adresse, som ikke kan regnes tilbage til adressen. AI i appen går gennem Anthropic, som beskrevet ovenfor. Notifikationer i iPhone-appen sendes gennem Apples notifikationstjeneste, som får beskeden for at kunne levere den. Vi bruger ingen analyse- eller reklamesporing. Din browser gemmer din login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din egen gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner med det samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om andres kalendere gemmes i din browser."
+              "text": "Data gemmes hos vores databaseudbyder, Supabase, og hjemmesiden leveres af Vercel. Login-e-mails sendes af Resend, som får din e-mailadresse for at kunne sende dem. Alle tre fører almindelige tekniske logfiler for at drive deres tjenester. For at ingen kan få os til at sende mængder af login-e-mails, gemmer vi i et døgn, hvornår en sådan e-mail blev sendt, og en kode lavet ud fra modtagerens adresse, som ikke kan regnes tilbage til adressen. AI i appen går gennem Anthropic, som beskrevet ovenfor. Notifikationer i iPhone-appen sendes gennem Apples notifikationstjeneste, som får beskeden for at kunne levere den. Vi bruger ingen analyse- eller reklamesporing. Din browser gemmer din login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din egen gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner med det samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om andres kalendere gemmes i din browser. I iPhone-appen ligger dit login i telefonens nøglering og slettes, når du logger ud. Appen gemmer også det sprog og udseende, du har valgt, telefonens kalenderforbindelse, og hvad AI'en fandt ud af om aftalerne i din egen kalender og dine svar om rejser, så den ikke spørger igen. Intet om andres kalendere gemmes på telefonen."
             }
           ]
         },
@@ -794,7 +794,7 @@
     },
     "en": {
       "title": "Privacy policy",
-      "updated": "Last updated 13 November 2026",
+      "updated": "Last updated 27 November 2026",
       "sections": [
         {
           "title": "In short",
@@ -843,7 +843,7 @@
               "text": "If you chose a primary calendar, we use your access to it to add the events you agree on: when you press Add to my calendar, or on our own if you switched on Add automatically. The entry holds the event's name, the group's name and the names of the others taking part. If the event is cancelled, we take it out again. We never change or delete any other event in your calendar. For now this works with Apple calendars, and with the calendars on your phone in the iPhone app. The app adds those entries itself, while it is open or working in the background, and each entry carries a link back to the event in the app."
             },
             {
-              "text": "When you choose a password, or sign in with one, your browser checks it against Have I Been Pwned, a public list of passwords from known data leaks, so a password that is easy to guess gets caught. Only the first 5 characters of a hash of the password are sent, and the password itself never leaves your browser."
+              "text": "When you choose a password, or sign in with one, your browser or the app checks it against Have I Been Pwned, a public list of passwords from known data leaks, so a password that is easy to guess gets caught. Only the first 5 characters of a hash of the password are sent, and the password itself never leaves your device."
             },
             {
               "text": "Our use and transfer of information received from Google APIs adheres to the [Google API Services User Data Policy](https://developers.google.com/terms/api-services-user-data-policy), including the Limited Use requirements."
@@ -858,7 +858,7 @@
               "text": "Our AI is Claude, an AI model from Anthropic. Nothing is sent to Anthropic until you have said yes to the AI. We ask on My calendar and the first time you use one of the AI buttons. You can use the app without it, and you can always change your answer under Profile, Your data."
             },
             {
-              "text": "**What you write or say yourself.** If you choose Plan with AI, what you write or say about the event is sent to Anthropic. With it go today's date, the months that can be planned in, and the language you use the app in. When you add details, what you wrote before and the event's settings so far go too. Nothing else: not your calendars, not when anyone is busy, and not the names of your group or its members. If you name someone yourself, the name is sent as you wrote it, and we find the person in the group in your browser. Anthropic answers with settings for the event, which you see and can change before anything is sent to the group."
+              "text": "**What you write or say yourself.** If you choose Plan with AI, what you write or say about the event is sent to Anthropic. With it go today's date, the months that can be planned in, and the language you use the app in. When you add details, what you wrote before and the event's settings so far go too. Nothing else: not your calendars, not when anyone is busy, and not the names of your group or its members. If you name someone yourself, the name is sent as you wrote it, and we find the person in the group on your device. Anthropic answers with settings for the event, which you see and can change before anything is sent to the group."
             },
             {
               "text": "**Add to calendar.** If you use Add to calendar, what you write or say about when you are away or busy is sent to Anthropic. With it go today's date and the language you use the app in, and when you add details, what you wrote before and the times you see on screen. Nothing else: not your calendars and not names. Anthropic answers with times, which you see and can change before anything is kept. Only when you press Save do we keep the times (see What we store), and never the sentence you wrote or said. The AI reads nothing from your calendar to do this."
@@ -935,7 +935,7 @@
           "title": "Where it is kept",
           "blocks": [
             {
-              "text": "Data is stored with our database provider, Supabase, and the website is served by Vercel. Sign-in emails are delivered by Resend, which receives your email address in order to send them. All three keep standard technical logs to run their services. So that nobody can make us send heaps of sign-in emails, we keep, for a day, when such an email was sent and a code made from the recipient's address, which can't be turned back into the address. AI in the app goes through Anthropic, as described above. Notifications in the iPhone app are sent through Apple's notification service, which receives the message in order to deliver it. We use no analytics or advertising trackers. Your browser keeps your login session so you stay signed in, the language you picked, and a copy of your own group list, your calendar connections and whether you have admin access, so pages open instantly. That copy is deleted when you sign out and is never kept for more than a week. Nothing about other people's calendars is stored in your browser."
+              "text": "Data is stored with our database provider, Supabase, and the website is served by Vercel. Sign-in emails are delivered by Resend, which receives your email address in order to send them. All three keep standard technical logs to run their services. So that nobody can make us send heaps of sign-in emails, we keep, for a day, when such an email was sent and a code made from the recipient's address, which can't be turned back into the address. AI in the app goes through Anthropic, as described above. Notifications in the iPhone app are sent through Apple's notification service, which receives the message in order to deliver it. We use no analytics or advertising trackers. Your browser keeps your login session so you stay signed in, the language you picked, and a copy of your own group list, your calendar connections and whether you have admin access, so pages open instantly. That copy is deleted when you sign out and is never kept for more than a week. Nothing about other people's calendars is stored in your browser. In the iPhone app, your login is kept in the phone's keychain and deleted when you sign out. The app also keeps the language and appearance you picked, the phone's calendar connection, and what the AI made of the events in your own calendar and your answers about trips, so it doesn't ask again. Nothing about other people's calendars is stored on the phone."
             }
           ]
         },

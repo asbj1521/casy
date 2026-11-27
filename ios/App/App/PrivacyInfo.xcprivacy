@@ -3,7 +3,8 @@
 <!--
   Casy's privacy manifest (#142). It must say the same as the App Privacy
   answers in App Store Connect and the privacy policy ("What Casy stores"):
-  change all three together. Capacitor's own manifest covers its framework.
+  change all three together. The app has no third-party code in it (2.0, #202):
+  the only outside package, SnapshotTesting, is in the tests alone.
 
   Collected, all linked to the account, none for tracking, all for the app's
   own function: the display name and email (sign-in), the account id, the
@@ -124,7 +125,8 @@
 	<key>NSPrivacyAccessedAPITypes</key>
 	<array>
 		<dict>
-			<!-- The theme chosen in Settings, kept for the next launch (AppAppearance). -->
+			<!-- The app's own settings and state on this phone (theme, language, asks, labels,
+			     trips; UserDefaults.standard only, no app group). -->
 			<key>NSPrivacyAccessedAPIType</key>
 			<string>NSPrivacyAccessedAPICategoryUserDefaults</string>
 			<key>NSPrivacyAccessedAPITypeReasons</key>

@@ -68,7 +68,7 @@ final class PushWork: NSObject {
     static let failedToRegister = Notification.Name("casy.push.failedToRegister")
 
     /// iOS's taps and the notifications shown while the app is open come here
-    /// (AppDelegate at launch; again once Capacitor's bridge, which takes it, has loaded).
+    /// (AppDelegate, at launch).
     func takeTaps() {
         UNUserNotificationCenter.current().delegate = self
     }

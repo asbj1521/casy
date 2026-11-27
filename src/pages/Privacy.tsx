@@ -24,7 +24,7 @@ const googlePolicyLink = (label: string) => (
 
 const da: LegalCopy = {
   title: "Privatlivspolitik",
-  updated: "Senest opdateret 13. november 2026",
+  updated: "Senest opdateret 27. november 2026",
   sections: [
     {
       title: "Kort fortalt",
@@ -191,10 +191,10 @@ const da: LegalCopy = {
             tilbage til aftalen i appen.
           </p>
           <p>
-            Når du vælger en adgangskode, eller logger ind med en, tjekker din browser den mod Have
-            I Been Pwned, en offentlig liste over adgangskoder fra kendte datalæk, så en
-            adgangskode, der er let at gætte, bliver opdaget. Kun de første 5 tegn af en hashværdi
-            af adgangskoden bliver sendt, og selve adgangskoden forlader aldrig din browser.
+            Når du vælger en adgangskode, eller logger ind med en, tjekker din browser eller appen
+            den mod Have I Been Pwned, en offentlig liste over adgangskoder fra kendte datalæk, så
+            en adgangskode, der er let at gætte, bliver opdaget. Kun de første 5 tegn af en
+            hashværdi af adgangskoden bliver sendt, og selve adgangskoden forlader aldrig din enhed.
           </p>
           <p>
             Vores brug og overførsel af oplysninger fra Googles API&apos;er følger{" "}
@@ -223,7 +223,7 @@ const da: LegalCopy = {
             også det, du skrev før, og de indstillinger, aftalen har nu. Intet andet: ikke dine
             kalendere, ikke hvornår nogen er optaget, og ikke navnene på din gruppe eller dens
             medlemmer. Nævner du selv et navn, sendes det, som du skrev det, og vi finder personen i
-            gruppen i din browser. Anthropic svarer med indstillinger til aftalen, som du ser og kan
+            gruppen på din enhed. Anthropic svarer med indstillinger til aftalen, som du ser og kan
             rette, før noget bliver sendt til gruppen.
           </p>
           <p>
@@ -438,7 +438,11 @@ const da: LegalCopy = {
           login-session, så du forbliver logget ind, det sprog, du har valgt, og en kopi af din egen
           gruppeliste, dine kalenderforbindelser og om du har admin-adgang, så siderne åbner med det
           samme. Kopien slettes, når du logger ud, og gemmes aldrig i mere end en uge. Intet om
-          andres kalendere gemmes i din browser.
+          andres kalendere gemmes i din browser. I iPhone-appen ligger dit login i telefonens
+          nøglering og slettes, når du logger ud. Appen gemmer også det sprog og udseende, du har
+          valgt, telefonens kalenderforbindelse, og hvad AI&apos;en fandt ud af om aftalerne i din
+          egen kalender og dine svar om rejser, så den ikke spørger igen. Intet om andres kalendere
+          gemmes på telefonen.
         </p>
       ),
     },
@@ -533,7 +537,7 @@ const da: LegalCopy = {
 
 const en: LegalCopy = {
   title: "Privacy policy",
-  updated: "Last updated 13 November 2026",
+  updated: "Last updated 27 November 2026",
   sections: [
     {
       title: "In short",
@@ -699,10 +703,10 @@ const en: LegalCopy = {
             link back to the event in the app.
           </p>
           <p>
-            When you choose a password, or sign in with one, your browser checks it against Have I
-            Been Pwned, a public list of passwords from known data leaks, so a password that is easy
-            to guess gets caught. Only the first 5 characters of a hash of the password are sent,
-            and the password itself never leaves your browser.
+            When you choose a password, or sign in with one, your browser or the app checks it
+            against Have I Been Pwned, a public list of passwords from known data leaks, so a
+            password that is easy to guess gets caught. Only the first 5 characters of a hash of the
+            password are sent, and the password itself never leaves your device.
           </p>
           <p>
             Our use and transfer of information received from Google APIs adheres to the{" "}
@@ -731,7 +735,7 @@ const en: LegalCopy = {
             you wrote before and the event&apos;s settings so far go too. Nothing else: not your
             calendars, not when anyone is busy, and not the names of your group or its members. If
             you name someone yourself, the name is sent as you wrote it, and we find the person in
-            the group in your browser. Anthropic answers with settings for the event, which you see
+            the group on your device. Anthropic answers with settings for the event, which you see
             and can change before anything is sent to the group.
           </p>
           <p>
@@ -946,7 +950,12 @@ const en: LegalCopy = {
           your login session so you stay signed in, the language you picked, and a copy of your own
           group list, your calendar connections and whether you have admin access, so pages open
           instantly. That copy is deleted when you sign out and is never kept for more than a week.
-          Nothing about other people&apos;s calendars is stored in your browser.
+          Nothing about other people&apos;s calendars is stored in your browser. In the iPhone app,
+          your login is kept in the phone&apos;s keychain and deleted when you sign out. The app
+          also keeps the language and appearance you picked, the phone&apos;s calendar connection,
+          and what the AI made of the events in your own calendar and your answers about trips, so
+          it doesn&apos;t ask again. Nothing about other people&apos;s calendars is stored on the
+          phone.
         </p>
       ),
     },
