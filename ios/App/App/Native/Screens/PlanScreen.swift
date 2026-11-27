@@ -429,7 +429,7 @@ private struct TimePicker: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             column(CasyStrings.planFrom) {
-                Picker("", selection: Binding(get: { startValue(wheel) }, set: pickStart)) {
+                Picker("", selection: Binding(get: { startValue(wheel) }, set: { pickStart($0) })) {
                     ForEach(startOptions(wheel), id: \.value) { Text($0.label).tag($0.value) }
                 }
             }
