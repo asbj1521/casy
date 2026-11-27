@@ -64,16 +64,21 @@ struct DaySlice: View {
 
     /// The hours shown: the event with an hour either side (five at the
     /// least), centred on the event as the web's slice is (DayColumns' `aim`);
-    /// an event of most of the day opens at 08:00.
+    /// an event of most of the day opens at 08:00. The slice may run an hour
+    /// past midnight, so an evening that ends at midnight (or goes on) still
+    /// has room under it rather than meeting the bottom.
     private var window: (from: Double, hours: Double) {
         let next = addDays(midnight, 1, appTimeZone)
         let onDay = Double(min(end, next) - start) / 3_600_000
-        let hours = min(24, max(Self.leastHours, onDay + 2 * Self.aroundHours))
+        let hours = min(Self.lastHour, max(Self.leastHours, onDay + 2 * Self.aroundHours))
         let span = placeSpan(start, end, midnight: midnight, appTimeZone)
         let centre = span.height > 0.8 ? 8 + hours / 2 : (span.top + span.height / 2) * 24
-        let from = min(max(0, centre - hours / 2), 24 - hours)
+        let from = min(max(0, centre - hours / 2), Self.lastHour - hours)
         return (from, hours)
     }
+
+    /// The slice's end: one in the morning, an hour into the next day.
+    private static let lastHour = 25.0
 
     private var lang: Lang { CasyStrings.language == "en" ? .en : .da }
 
@@ -142,13 +147,13 @@ struct DaySlice: View {
         }
         let step = hourPx < 18 ? 2 : 1
         return ZStack(alignment: .topLeading) {
-            ForEach(Array((1...23).filter { $0 % step == 0 }), id: \.self) { h in
-                let top = y(at(h) / 24)
+            ForEach(Array((1...24).filter { $0 % step == 0 }), id: \.self) { h in
+                let top = h == 24 ? (24 - from) * hourPx : y(at(h) / 24)
                 Rectangle()
                     .fill(Theme.border.color.opacity(0.8))
                     .frame(width: width, height: 1)
                     .offset(x: Self.gutter, y: top)
-                Text(verbatim: formatClockMinutes(h * 60))
+                Text(verbatim: formatClockMinutes((h % 24) * 60))
                     .font(.system(size: 12).monospacedDigit())
                     .foregroundStyle(Theme.mutedForeground.color)
                     .frame(width: Self.gutter - 6, height: 16, alignment: .trailing)
@@ -175,7 +180,9 @@ struct DaySlice: View {
             // The event, pencilled in as the web's lit pencil: a 2 point orange
             // border, the orange at 20 %, its name 13 bold and its time in orange.
             let span = placeSpan(start, end, midnight: midnight, appTimeZone)
-            let px = max(span.height * 24 * hourPx, 22)
+            // Going on past midnight: drawn on to the slice's end, where it carries on.
+            let goesOn = end > addDays(midnight, 1, appTimeZone)
+            let px = goesOn ? (Self.lastHour - span.top * 24) * hourPx : max(span.height * 24 * hourPx, 22)
             RoundedRectangle(cornerRadius: 5)
                 .fill(Theme.primary.color.opacity(0.2))
                 .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Theme.primary.color, lineWidth: 2))
