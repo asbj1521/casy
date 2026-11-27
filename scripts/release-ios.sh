@@ -23,7 +23,6 @@ set -euo pipefail
 
 REPO=asbj1521/casy
 PROJECT=ios/App/App.xcodeproj
-CONFIG_COPY=ios/App/App/capacitor.config.json
 
 die() {
   echo "release: $*" >&2
@@ -101,14 +100,13 @@ if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
 fi
 say "releasing Casy $version ($build) from $branch at ${sha:0:7}"
 
-# --- Build the site and copy it into the app -----------------------------
+# --- The project the app talks to ----------------------------------------
+# The app has no page (#202): nothing of the website goes in, only Supabase's
+# address and publishable key, from .env.local.
 
-npm run build
-# Without CAP_LIVE_URL the copied config has no server address. An address
-# left there by npm run ios:live would make the app load from this Mac.
-env -u CAP_LIVE_URL -u CAP_WEB_DIR npx cap sync ios
 bash scripts/native/project-endpoint.sh
-! grep -q '"server"' "$CONFIG_COPY" || die "$CONFIG_COPY still has a server address; the app would load from this Mac"
+grep -q 'url = "https://' ios/App/App/Native/Session/ProjectBuiltIn.generated.swift \
+  || die "the app has no project address; is VITE_SUPABASE_URL in .env.local?"
 
 # --- Archive ---------------------------------------------------------------
 

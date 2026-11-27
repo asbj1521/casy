@@ -48,12 +48,10 @@ npm run release:ios
 - the app icon is 1024 px, opaque, and not Capacitor's placeholder.
 
 Then it:
-1. builds the site;
-2. copies it into the app;
-3. makes sure no `npm run ios:live` server address is left in it;
-4. archives;
-5. tags and pushes the tag;
-6. uploads to App Store Connect.
+1. writes the project's address and key into the app (`scripts/native/project-endpoint.sh`; the app has no page to copy in since #202);
+2. archives;
+3. tags and pushes the tag;
+4. uploads to App Store Connect.
 
 The upload uses the Apple account signed in to Xcode (Settings > Accounts).
 When it fails, the archive opens in Xcode's Organizer, where Distribute App >

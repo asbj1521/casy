@@ -26,9 +26,11 @@ if [ ! -d "$APP" ]; then
   work="$(mktemp -d)"
   trap 'git worktree remove --force "$work/src" >/dev/null 2>&1 || true; rm -rf "$work"' EXIT
   git worktree add --detach "$work/src" "$REF" >/dev/null
-  # What the build reads from outside git: the packages, and what `cap sync` wrote.
-  ln -s "$PWD/node_modules" "$work/src/node_modules"
-  cp ios/App/App/capacitor.config.json ios/App/App/config.xml "$work/src/ios/App/App/" 2>/dev/null || true
+  # What the build reads from outside git: the packages, and what `cap sync` wrote (kept here).
+  # Its own commit's packages, not this checkout's: the app has since dropped Capacitor's.
+  (cd "$work/src" && npm ci --ignore-scripts --no-audit --no-fund --loglevel=error)
+  cp scripts/native/reference-capacitor.config.json "$work/src/ios/App/App/capacitor.config.json"
+  cp scripts/native/reference-config.xml "$work/src/ios/App/App/config.xml"
   mkdir -p "$work/src/ios/App/App/public"
   cp -R dist-parity/. "$work/src/ios/App/App/public/"
   [ -f "$work/src/scripts/native/project-endpoint.sh" ] && (cd "$work/src" && bash scripts/native/project-endpoint.sh)

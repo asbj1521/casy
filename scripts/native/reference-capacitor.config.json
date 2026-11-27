@@ -1,0 +1,24 @@
+{
+  "appId": "app.casy",
+  "appName": "Find en dag",
+  "webDir": "dist",
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["banner", "sound", "list"]
+    }
+  },
+  "experimental": {
+    "ios": {
+      "spm": {
+        "swiftToolsVersion": "6.2"
+      }
+    }
+  },
+  "packageClassList": [
+    "AppPlugin",
+    "HapticsPlugin",
+    "PushNotificationsPlugin",
+    "SharePlugin",
+    "SpeechRecognitionPlugin"
+  ]
+}

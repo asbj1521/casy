@@ -5,18 +5,15 @@
 #   scripts/native/parity.sh ParityUITests/testHomeMonthLight # one
 #   scripts/native/parity.sh ParityUITests/testProfileLight ParityUITests/testProfileDark # several
 #
-# Builds the website against the fake backend into the app (npm run ios:parity;
-# PARITY_NO_WEB_BUILD=1 copies the last one in when the page hasn't changed), starts the fake
-# backend, builds the app once, then runs the tests on iPhone 17e twice: web only
-# and native. For each shot it writes <name>-web.png, <name>-native.png,
-# <name>-pair.png and <name>-diff.png to PARITY_OUT (default
-# $TMPDIR/casy-parity), and prints the share of pixels that differ.
-#
-# Afterwards the real site is put back into the app (npm run ios), even when a
-# test fails, so a build run from Xcode or ui-tests.sh signs in to the live
-# project again: left in, the test build signed in against a server that is
-# gone, and sign-in failed with "Load failed". PARITY_KEEP_TEST_BUILD=1 keeps
-# it, for several runs in a row.
+# Builds the website against the fake backend (npm run ios:parity, into
+# dist-parity; PARITY_NO_WEB_BUILD=1 keeps the last one when the page hasn't
+# changed) and puts it in the reference app (scripts/native/reference-app.sh:
+# the app as it was with its page, #202), starts the fake backend, builds the
+# app once, then runs the tests on iPhone 17e twice: the web side in the
+# reference app, the native side in this one. For each shot it writes
+# <name>-web.png, <name>-native.png, <name>-pair.png and <name>-diff.png to
+# PARITY_OUT (default $TMPDIR/casy-parity), and prints the share of pixels
+# that differ.
 set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
@@ -32,11 +29,9 @@ python3 -c "import PIL" 2>/dev/null || {
   exit 1
 }
 
-# The test build into the app: built afresh, or (PARITY_NO_WEB_BUILD=1, the page
-# unchanged) the last one copied back in, since every run ends with the real site.
-if [ "${PARITY_NO_WEB_BUILD:-}" = 1 ] && [ -d dist-parity ]; then
-  env -u CAP_LIVE_URL CAP_WEB_DIR=dist-parity npx cap sync ios >/dev/null
-else
+# The website's test build, for the reference app: built afresh, or the last one
+# (PARITY_NO_WEB_BUILD=1) when the page hasn't changed.
+if [ "${PARITY_NO_WEB_BUILD:-}" != 1 ] || [ ! -d dist-parity ]; then
   npm run --silent ios:parity
 fi
 
@@ -49,10 +44,6 @@ finish() {
   kill "$SERVER" 2>/dev/null || true
   # A film still running (a test failed): ended, so it is a readable file.
   [ -z "${RECORDER:-}" ] || { kill -INT "$RECORDER" 2>/dev/null; wait "$RECORDER" 2>/dev/null; } || true
-  if [ "${PARITY_KEEP_TEST_BUILD:-}" != 1 ]; then
-    echo "parity: putting the real site back into the app"
-    npm run --silent ios >/dev/null 2>&1 || echo "parity: npm run ios failed; run it by hand" >&2
-  fi
 }
 trap finish EXIT
 # Ready before the first test resets it.
