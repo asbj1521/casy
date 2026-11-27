@@ -89,6 +89,13 @@ struct ConnectedCalendarsScreen: View {
         .accessibilityIdentifier("accounts.screen")
         .casyPushedBar(CasyStrings.accountsTitle, close: CasyStrings.done, action: closeSheet)
         .pageLinks(leave: leave)
+        // The Apple guide's "I have the password": its form, once the guide has gone.
+        .environment(\.appleGuideNext) {
+            Task {
+                try? await Task.sleep(for: .milliseconds(450))
+                form = .apple
+            }
+        }
         // Kalendere has just fetched the list: only the accounts may have moved on.
         .task { if model.data == nil { await model.load() } else { await model.loadAccounts() } }
         .refreshable { await model.load() }
@@ -733,6 +740,8 @@ private struct AppleFormSheet: View {
             }
             .casySheetBar(CasyStrings.provider("apple"), close: CasyStrings.cancel, disabled: submitting) { dismiss() }
             .pageLinks(leave: leave)
+            // Opened from this form, the guide's button is the way back to it.
+            .environment(\.appleGuideNext) {}
             .safeAreaInset(edge: .bottom) {
                 FlowButton(busy: submitting, action: submit) {
                     Text(submitting ? CasyStrings.appleReading : CasyStrings.connect)

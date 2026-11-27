@@ -7,6 +7,8 @@ import SwiftUI
 /// page (never Safari).
 enum PageLink: Hashable {
     case support, howItWorks, terms, myData
+    /// The connect guides (#202): Apple Calendar's as a list, the link's.
+    case appleGuide, linkGuide
     /// The privacy policy, at a section when it names one (/privacy#ai).
     case privacy(section: String?)
 
@@ -18,6 +20,8 @@ enum PageLink: Hashable {
         case "/terms": self = .terms
         case "/privacy": self = .privacy(section: parts.count > 1 ? parts[1] : nil)
         case "/profile/data": self = .myData
+        case "/help/connect-icloud": self = .appleGuide
+        case "/help/connect-ics": self = .linkGuide
         default: return nil
         }
     }
@@ -35,6 +39,8 @@ extension View {
 private struct PageLinks: ViewModifier {
     let leave: (LeavingProfile) -> Void
     @State private var next: PageLink?
+    /// Handed on by hand: a pushed screen doesn't take it from here.
+    @Environment(\.appleGuideNext) private var appleGuideNext
 
     func body(content: Content) -> some View {
         content
@@ -53,6 +59,7 @@ private struct PageLinks: ViewModifier {
             )
             .navigationDestination(item: $next) { page in
                 PageScreen(page: page, leave: leave)
+                    .environment(\.appleGuideNext, appleGuideNext)
             }
     }
 }
@@ -70,6 +77,8 @@ struct PageScreen: View {
         case .privacy(let section):
             LegalScreen(page: HelpPages.shared.privacy.current, name: "privacy", section: section, leave: leave)
         case .myData: MyDataScreen(leave: leave)
+        case .appleGuide: AppleGuideScreen()
+        case .linkGuide: LinkGuideScreen()
         }
     }
 }

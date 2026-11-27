@@ -61,6 +61,60 @@ public struct HelpPages: Decodable, Sendable {
         public let plan: String
     }
 
+    /// The Apple Calendar guide as a list (#202): what it takes, the steps at
+    /// Apple in the iPhone's words, and what to do when Apple says no.
+    public struct AppleGuide: Decodable, Sendable {
+        public let eyebrow: String
+        public let title: String
+        public let intro: String
+        public let needTitle: String
+        public let need: [String]
+        public let safe: String
+        public let stepsTitle: String
+        public let steps: [String]
+        public let signIn: String
+        public let failedTitle: String
+        public let failed: String
+        public let missingTitle: String
+        public let missing: String
+        public let next: String
+        public let revoke: String
+    }
+
+    /// Find din kalenders link: five places a link can come from, each with a
+    /// drawing of where it is, in that app's own words.
+    public struct LinkGuide: Decodable, Sendable {
+        public struct Source: Decodable, Sendable, Identifiable {
+            public let id: String
+            public let badge: String
+            public let title: String
+            public let body: String
+        }
+
+        public struct Mock: Decodable, Sendable {
+            public let sidebar: [String]
+            public let getInfo: String
+            public let unsubscribe: String
+            public let sharing: String
+            public let publicCalendar: String
+            public let integrate: String
+            public let secretAddress: String
+            public let publishTitle: String
+            public let canView: String
+            public let publish: String
+            public let keywords: [String]
+            /// Markdown, the addresses' ends as `code`.
+            public let looksLike: String
+        }
+
+        public let eyebrow: String
+        public let title: String
+        public let intro: String
+        public let warning: String
+        public let sources: [Source]
+        public let mock: Mock
+    }
+
     public struct Both<Page: Decodable & Sendable>: Decodable, Sendable {
         let da: Page
         let en: Page
@@ -73,6 +127,8 @@ public struct HelpPages: Decodable, Sendable {
     public let howItWorks: Both<HowItWorks>
     public let terms: Both<Legal>
     public let privacy: Both<Legal>
+    public let appleGuide: Both<AppleGuide>
+    public let linkGuide: Both<LinkGuide>
 
     /// Read once, from the package's own copy.
     public static let shared: HelpPages = {
@@ -97,6 +153,9 @@ public struct HelpPages: Decodable, Sendable {
             ?? AttributedString(inApp)
         for run in text.runs where run.link != nil {
             text[run.range].underlineStyle = .single
+        }
+        for run in text.runs where run.inlinePresentationIntent?.contains(.code) == true {
+            text[run.range].font = .system(size: size ?? 12, design: .monospaced)
         }
         if let size {
             for run in text.runs

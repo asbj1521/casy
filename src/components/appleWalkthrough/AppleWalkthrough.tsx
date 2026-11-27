@@ -127,6 +127,11 @@ const en: typeof da = {
   },
 };
 
+/** Both languages, for the iPhone app's own copy of the walkthrough's captions (e2e/helpPages.parity.ts). */
+// The copy stays in the page file (CLAUDE.md, Languages); a change here reloads the page.
+// eslint-disable-next-line react-refresh/only-export-components
+export const COPY = { da, en };
+
 function useCopy() {
   const { lang } = useLang();
   return lang === "da" ? da : en;

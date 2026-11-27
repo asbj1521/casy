@@ -34,6 +34,7 @@ export const ICONS = {
   "calendar-range": [2],
   "calendar-search": [2],
   "calendar-x": [2],
+  "building-complex": [2],
   bus: [2],
   camera: [2],
   check: [2, 2.5, 3, 3.5],

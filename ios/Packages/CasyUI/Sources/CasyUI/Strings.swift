@@ -1209,6 +1209,8 @@ public enum CasyStrings {
     /// The note on a trip put in the phone's calendar: how it is known again (TRIP_NOTES).
     public static var tripCalendarNote: String { text("trips.calendarNote") }
     public static var tripAddFailed: String { text("trips.addFailed") }
+    /// The Apple Calendar guide's first step: the app never opens Safari itself.
+    public static var guidesAppleOpen: String { text("guides.appleOpen") }
     public static func tripAway(from: String, to: String) -> String { format("trips.away", from, to) }
     public static var tripAcceptNote: String { text("trips.acceptNote") }
     public static var tripAccept: String { text("trips.accept") }

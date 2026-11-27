@@ -342,6 +342,11 @@ function NextButton({ label, onClick }: { label: string; onClick: () => void }) 
   );
 }
 
+/** Both languages, for the iPhone app's own copy of this page (e2e/helpPages.parity.ts). */
+// The copy stays in the page file (CLAUDE.md, Languages); a change here reloads the page.
+// eslint-disable-next-line react-refresh/only-export-components
+export const COPY = { da, en };
+
 export default function ConnectIcloudHelp() {
   const { lang } = useLang();
   const c = lang === "da" ? da : en;

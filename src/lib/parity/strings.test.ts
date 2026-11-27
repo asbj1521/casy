@@ -1275,6 +1275,10 @@ const NATIVE_ONLY: Record<string, { da: string; en: string }> = {
     da: "Vi kunne ikke lægge rejsen i din kalender.",
     en: "We couldn't put the trip in your calendar.",
   },
+  "guides.appleOpen": {
+    da: "Åbn Safari, og gå til Apples kontoside:",
+    en: "Open Safari and go to Apple's account page:",
+  },
   "admin.nativeHome": { da: "Native forside", en: "Native home page" },
   "admin.nativeHomeDetail": {
     da: "Forsiden tegnet i Swift, kun på denne telefon",

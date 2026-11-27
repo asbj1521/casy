@@ -247,6 +247,42 @@ final class CalendarsUITests: XCTestCase {
         XCTAssertTrue(text(app, containing: "Tilføjede \"Skema\"").waitForExistence(timeout: 10))
     }
 
+    /// The Apple Calendar guide is the app's own list (#202), its button opening the form.
+    func testTheAppleGuide() {
+        let app = launch("calendars:accounts", title: "Forbundne kalendere")
+        let more = app.buttons["accounts.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
+        more.tap()
+        app.links["Apple"].firstMatch.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["help.appleGuide"].waitForExistence(timeout: 5))
+        XCTAssertTrue(text(app, containing: "Åbn Safari").exists)
+        app.buttons["guide.copyAddress"].tap()
+        XCTAssertTrue(app.staticTexts["Kopieret"].waitForExistence(timeout: 2))
+        shot("guide-apple")
+        app.buttons["appleGuide.next"].tap()
+        XCTAssertTrue(app.textFields["Apple-konto (e-mail)"].waitForExistence(timeout: 5))
+    }
+
+    /// Finding a calendar's link is the app's own guide (#202).
+    func testTheLinkGuide() {
+        let app = launch("calendars:accounts", title: "Forbundne kalendere")
+        let more = app.buttons["accounts.more"]
+        XCTAssertTrue(more.waitForExistence(timeout: 10))
+        more.tap()
+        // The footnote's second link answers with no size: tapped just after the first.
+        let apple = app.links["Apple"].firstMatch
+        XCTAssertTrue(apple.waitForExistence(timeout: 5))
+        apple.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5)).withOffset(CGVector(dx: 40, dy: 0)).tap()
+        XCTAssertTrue(app.descendants(matching: .any)["help.linkGuide"].waitForExistence(timeout: 5))
+        XCTAssertTrue(text(app, containing: "Hemmelig adresse i iCal-format").exists)
+        shot("guide-link")
+        app.swipeUp()
+        shot("guide-link-drawings")
+        app.swipeUp()
+        app.swipeUp()
+        shot("guide-link-end")
+    }
+
     /// An ordinary password is warned about and refused; an app-specific one connects.
     func testConnectingAnAppleAccount() {
         let app = launch("calendars:accounts", title: "Forbundne kalendere")

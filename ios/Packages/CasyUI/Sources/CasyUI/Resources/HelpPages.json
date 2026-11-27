@@ -996,5 +996,195 @@
         }
       ]
     }
+  },
+  "appleGuide": {
+    "da": {
+      "eyebrow": "Apple-kalender",
+      "title": "Forbind din Apple-kalender",
+      "intro": "Apple lader ikke andre apps komme ind i din kalender med din almindelige Apple-adgangskode. I stedet laver du en ekstra adgangskode hos Apple og giver den til os. Tænk på den som en ekstranøgle: vi bruger den kun til at se, hvornår du er optaget, og du kan smide den væk når som helst uden at røre din almindelige adgangskode.",
+      "needTitle": "Det skal du bruge",
+      "need": [
+        "Din e-mail og adgangskode til Apple. Face ID er ikke nok her.",
+        "En af dine Apple-enheder i nærheden, til den kode Apple sender",
+        "Cirka 5 minutter"
+      ],
+      "safe": "Vi ser aldrig din almindelige Apple-adgangskode. Vi spørger kun Apple om, hvornår du er optaget, aldrig hvad dine aftaler hedder, og gemmer den ekstra adgangskode krypteret.",
+      "stepsTitle": "Sådan gør du hos Apple",
+      "steps": [
+        "Tryk på Log ind.",
+        "Brug ikke Face ID her. Tryk på krydset for at lukke boksen. Apple skal have din adgangskode.",
+        "Skriv din e-mail, og tryk på Fortsæt, ikke på Log ind med loginnøgle. Skriv så din adgangskode, og tryk på Fortsæt.",
+        "Skriv den kode, Apple sender dig.",
+        "Rul langt ned, og tryk på App-specifikke adgang…",
+        "Tryk på +.",
+        "Skriv Vi finder lige en dag, og tryk på Opret.",
+        "Beder Apple om din adgangskode igen? Skriv den, og tryk på Fortsæt.",
+        "Hold fingeren på koden, og træk de blå prikker ud til hver sin ende, så hele koden er markeret. Tryk på Kopier og så på OK."
+      ],
+      "signIn": "Log ind med din e-mail og adgangskode, ikke med Face ID eller en loginnøgle. Ellers kan Apple ikke lave adgangskoden.",
+      "failedTitle": "Siger Apple, at der ikke kunne genereres en adgangskode?",
+      "failed": "Så er du logget ind med Face ID eller en loginnøgle. Tryk på Log ind med adgangskode, ikke på Annuller. Log ind med e-mail og adgangskode, og start igen fra App-specifikke adgang…",
+      "missingTitle": "Kan du ikke finde App-specifikke adgangskoder?",
+      "missing": "Apple tilbyder dem kun, når tofaktorgodkendelse er slået til for din Apple-konto. De fleste har det allerede. Hvis du ikke har, så slå det til under Login og sikkerhed først, så dukker muligheden op.",
+      "next": "Jeg har adgangskoden",
+      "revoke": "Du kan tilbagekalde adgangskoden når som helst under App-specifikke adgangskoder på [account.apple.com/account/manage](https://account.apple.com/account/manage)."
+    },
+    "en": {
+      "eyebrow": "Apple Calendar",
+      "title": "Connect your Apple Calendar",
+      "intro": "Apple doesn't let other apps into your calendar with your normal Apple password. Instead, you make an extra password at Apple and give it to us. Think of it as a spare key: we only use it to see when you're busy, and you can throw it away at any time without touching your normal password.",
+      "needTitle": "What you need",
+      "need": [
+        "Your Apple email and password. Face ID isn't enough here.",
+        "One of your Apple devices nearby, for the code Apple sends",
+        "About 5 minutes"
+      ],
+      "safe": "We never see your normal Apple password. We only ask Apple when you're busy, never what your events are called, and keep the extra password encrypted.",
+      "stepsTitle": "Here's how it goes at Apple",
+      "steps": [
+        "Tap Sign In.",
+        "Don't use Face ID here. Tap the X to close the box. Apple needs your password.",
+        "Type your email and tap Continue, not Sign in with Passkey. Then type your password and tap Continue.",
+        "Type the code Apple sends you.",
+        "Scroll a long way down and tap App-Specific Passwo…",
+        "Tap +.",
+        "Type Vi finder lige en dag and tap Create.",
+        "If Apple asks for your password again, type it and tap Continue.",
+        "Press and hold the code, then drag the blue dots out to either end so the whole code is selected. Tap Copy, then OK."
+      ],
+      "signIn": "Sign in with your email and password, not Face ID or a passkey. Otherwise Apple can't make the password.",
+      "failedTitle": "Does Apple say it couldn't generate a password?",
+      "failed": "Then you signed in with Face ID or a passkey. Tap Sign in with password, not Cancel. Sign in with your email and password, and start again from App-Specific Passwo…",
+      "missingTitle": "Can't find App-Specific Passwords?",
+      "missing": "Apple only offers them when two-factor authentication is on for your Apple Account. Most accounts have it already. If yours doesn't, turn it on under Sign-In and Security first, and the option will appear.",
+      "next": "I have the password",
+      "revoke": "You can revoke the password at any time under App-Specific Passwords at [account.apple.com/account/manage](https://account.apple.com/account/manage)."
+    }
+  },
+  "linkGuide": {
+    "da": {
+      "eyebrow": "Sådan finder du dit link",
+      "title": "Find din kalenders link",
+      "intro": "Et kalenderlink (også kaldet et ICS- eller webcal-link) virker for enhver kalender, der udgiver et: et skoleskema, en arbejdsplan eller en kalender fra Google, Outlook eller Apple. Hvor du finder det, afhænger af, hvor kalenderen ligger, så vælg den, der passer til din.",
+      "warning": "Alle med linket kan læse kalenderen, så behandl det som en adgangskode. Vi gemmer kun start- og sluttider fra det. Titler, steder og deltagere fjernes, før noget gemmes.",
+      "sources": [
+        {
+          "id": "subscribed",
+          "badge": "Hurtigst, hvis det passer på dig",
+          "title": "Abonnerer du allerede på den i Apple Kalender?",
+          "body": "Har du allerede tilføjet kalenderen på din iPhone eller Mac (for eksempel et skoleskema), behøver du ikke finde det oprindelige link igen. Åbn Kalender-appen, højreklik (eller ctrl-klik) på kalenderen i sidepanelet, og vælg Vis info. Kalenderens link står lige der, klar til at blive kopieret."
+        },
+        {
+          "id": "own",
+          "badge": "Din egen Apple-kalender",
+          "title": "Del en kalender, du selv har lavet",
+          "body": "Har du selv lavet kalenderen i Apples Kalender-app, så højreklik på den, vælg Delingsindstillinger, og slå Offentlig kalender til. Apple laver et webcal://-link, som du kan kopiere ind i appen."
+        },
+        {
+          "id": "google",
+          "badge": "Google Kalender",
+          "title": "Fra indstillingerne i Google Kalender",
+          "body": "Gå til calendar.google.com, åbn Indstillinger, vælg kalenderen under \"Indstillinger for mine kalendere\", og rul ned til \"Integrer kalender\". Kopiér \"Hemmelig adresse i iCal-format\", og behandl den som en adgangskode, da alle med den kan læse kalenderen."
+        },
+        {
+          "id": "outlook",
+          "badge": "Outlook-kalender",
+          "title": "Fra Outlooks udgivelse af kalendere",
+          "body": "Åbn Indstillinger i Outlook på nettet, gå til Kalender og så Delte kalendere, og vælg Udgiv en kalender. Vælg kalenderen og \"Kan se alle detaljer\", udgiv den, og kopiér det ICS-link, du får."
+        },
+        {
+          "id": "platform",
+          "badge": "En skole- eller arbejdsplatform",
+          "title": "Fra et skema eller en planlægningsside",
+          "body": "Kig efter ord som dem nedenfor i platformens kalender- eller kontoindstillinger. Det er som regel dér, linket ligger."
+        }
+      ],
+      "mock": {
+        "sidebar": [
+          "Hjem",
+          "Skole",
+          "Familie"
+        ],
+        "getInfo": "Vis info",
+        "unsubscribe": "Afmeld",
+        "sharing": "Delingsindstillinger: Familie",
+        "publicCalendar": "Offentlig kalender",
+        "integrate": "Integrer kalender",
+        "secretAddress": "Hemmelig adresse i iCal-format",
+        "publishTitle": "Udgiv en kalender",
+        "canView": "Kan se alle detaljer",
+        "publish": "Udgiv",
+        "keywords": [
+          "Abonner",
+          "Synkroniser kalender",
+          "Eksporter",
+          "iCal-feed",
+          "ICS-link"
+        ],
+        "looksLike": "Selve linket starter som regel med `webcal://` eller slutter på `.ics`."
+      }
+    },
+    "en": {
+      "eyebrow": "How to find your link",
+      "title": "Find your calendar's link",
+      "intro": "A calendar link (also called an ICS or webcal link) works for any calendar that publishes one: a school timetable, a work schedule, or one from Google, Outlook or Apple. Where to find it depends on where the calendar lives, so pick whichever matches yours below.",
+      "warning": "Anyone who has this link can read the calendar, so treat it like a password. We only ever keep start and end times from it; titles, places and attendees are removed before anything is stored.",
+      "sources": [
+        {
+          "id": "subscribed",
+          "badge": "Fastest, if it applies to you",
+          "title": "Already subscribed to it in Apple Calendar?",
+          "body": "If you've already added this calendar to your iPhone or Mac (a school timetable, for example), you don't need to go find the original link again. Open the Calendar app, right-click (or Control-click) the calendar in the sidebar and choose Get Info. The feed's link is right there, ready to copy."
+        },
+        {
+          "id": "own",
+          "badge": "Your own Apple calendar",
+          "title": "Sharing a calendar you own",
+          "body": "For a calendar you created yourself in Apple's Calendar app, right-click it and choose Sharing Settings, then turn on Public Calendar. Apple generates a webcal:// link there that you can copy into the app."
+        },
+        {
+          "id": "google",
+          "badge": "Google Calendar",
+          "title": "From Google Calendar's settings",
+          "body": "On calendar.google.com, open Settings, pick the calendar under \"Settings for my calendars\", and scroll to \"Integrate calendar\". Copy the \"Secret address in iCal format\" and treat it like a password, since anyone with it can read the calendar."
+        },
+        {
+          "id": "outlook",
+          "badge": "Outlook Calendar",
+          "title": "From Outlook's publish option",
+          "body": "In Outlook on the web, open Settings, then Calendar > Shared calendars, and choose Publish a calendar. Pick the calendar and \"Can view all details\", publish it, then copy the ICS link it gives you."
+        },
+        {
+          "id": "platform",
+          "badge": "A school or work platform",
+          "title": "From a timetable or scheduling site",
+          "body": "Look around its calendar or account settings for wording like the ones below. That's usually where the link is."
+        }
+      ],
+      "mock": {
+        "sidebar": [
+          "Home",
+          "School",
+          "Family"
+        ],
+        "getInfo": "Get Info",
+        "unsubscribe": "Unsubscribe",
+        "sharing": "Sharing Settings: Family",
+        "publicCalendar": "Public Calendar",
+        "integrate": "Integrate calendar",
+        "secretAddress": "Secret address in iCal format",
+        "publishTitle": "Publish a calendar",
+        "canView": "Can view all details",
+        "publish": "Publish",
+        "keywords": [
+          "Subscribe",
+          "Sync calendar",
+          "Export",
+          "iCal feed",
+          "ICS link"
+        ],
+        "looksLike": "The link itself usually starts with `webcal://` or ends in `.ics`."
+      }
+    }
   }
 }

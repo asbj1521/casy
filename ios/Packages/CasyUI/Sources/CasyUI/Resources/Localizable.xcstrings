@@ -902,6 +902,23 @@
         }
       }
     },
+    "guides.appleOpen": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Åbn Safari, og gå til Apples kontoside:"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open Safari and go to Apple's account page:"
+          }
+        }
+      }
+    },
     "groups.delete": {
       "extractionState": "manual",
       "localizations": {
