@@ -48,6 +48,8 @@ final class ParityUITests: XCTestCase {
         ]
         app.launchArguments += mode == "web" ? ["-casyWebOnly", "YES"] : ["-casy.nativeHome", "YES"]
         app.launchArguments += extra
+        // Never opened "from" the other app: iOS would put its ◀ back link under the clock.
+        if mode == "native" { XCUIApplication(bundleIdentifier: "app.casy.reference").terminate() }
         app.launch()
         return app
     }

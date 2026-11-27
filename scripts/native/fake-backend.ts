@@ -136,6 +136,8 @@ createServer((request, response) => {
     // Apple account remembered as this phone's (src/lib/phoneCalendar.ts), as
     // after connecting it, so the page shows her month, not the import step.
     if (url.pathname === "/parity/session") {
+      // The connection it names this phone's, as the real server knows the phone by its id.
+      backend.world.phoneConnection = "conn-apple";
       return send(200, {
         "sb-localhost-auth-token": JSON.stringify(session()),
         [`casy-phone-calendar:${user.id}`]: "conn-apple",

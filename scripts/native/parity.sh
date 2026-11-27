@@ -118,6 +118,8 @@ for mode in web native; do
     exit 1
   fi
   cut "$mode"
+  # Closed, so the native run's app isn't opened "from" it (iOS's ◀ back link under the clock).
+  [ "$mode" = web ] && xcrun simctl terminate "$DEVICE_ID" app.casy.reference 2>/dev/null || true
 done
 
 shopt -s nullglob

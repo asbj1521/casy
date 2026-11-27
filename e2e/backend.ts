@@ -253,14 +253,18 @@ export class FakeBackend {
         // Only the iPhone app sends the phone's calendars. A plain update is
         // answered as for a phone whose connection was removed, unless the app's
         // own test connected one (conn-phone, #282); connecting makes one.
-        const phone = w.connections.some((c) => c.id === "conn-phone");
+        // Or the one a parity shot made this phone's (#202), so its page keeps its month.
+        const phoneId = w.connections.some((c) => c.id === "conn-phone")
+          ? "conn-phone"
+          : w.phoneConnection;
+        const phone = phoneId !== undefined;
         if (action === "writes") return ok(phone ? { tasks: [], check: [] } : { gone: true });
         if (action === "written") return ok({});
         const sent = Array.isArray(body.calendars)
           ? (body.calendars as { blocks?: unknown[] }[])
           : [];
         const busyBlocks = sent.reduce((n, c) => n + (c.blocks?.length ?? 0), 0);
-        if (phone) return ok({ connectionId: "conn-phone", calendars: sent.length, busyBlocks });
+        if (phone) return ok({ connectionId: phoneId, calendars: sent.length, busyBlocks });
         return body.create === true
           ? ok({ connectionId: "c-phone", calendars: 1, busyBlocks: 0 })
           : ok({ gone: true });

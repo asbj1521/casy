@@ -598,6 +598,11 @@ export interface World {
   version: number;
   /** The oldest app release Casy still works with (#143); none unless a test sets one. */
   minAppVersion: string | null;
+  /**
+   * The connection the phone's calendars are sent to, when a test made one this
+   * phone's (the iPhone app's parity shots, #202); none otherwise.
+   */
+  phoneConnection?: string;
   /** Who Mia blocked (#142), and the reports sent; none until a test makes some. */
   blocked: BlockedPerson[];
   reports: AdminReport[];
