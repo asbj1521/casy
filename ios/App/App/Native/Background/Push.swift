@@ -182,8 +182,8 @@ final class PushWork: NSObject {
         }
     }
 
-    /// Where a notification leads: the app's own screen, the home page first
-    /// when the tap launched the app, else the page's.
+    /// Where a notification (or, without the page, a link) leads: the app's own
+    /// screen, the home page first when it launched the app, else the page's.
     func open(_ path: String) {
         #if DEBUG
             NSLog("PushWork: tap to %@", path)
@@ -193,6 +193,9 @@ final class PushWork: NSObject {
             waitingPath = path
             return
         }
+        #if DEBUG
+            if PageFree.on { NSLog("PageFree: the page would have opened %@", path) }
+        #endif
         openOnPage(path)
         tested(path, "the page's")
     }

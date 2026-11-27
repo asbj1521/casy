@@ -27,6 +27,8 @@ public func appRoute(_ path: String) -> AppRoute? {
     guard bare.hasPrefix("/") else { return nil }
     switch parts.count {
     case 0: return .home
+    // The computer's QR code (#270): just the app.
+    case 1 where parts[0] == "app": return .home
     case 1 where parts[0] == "events": return .events(nil)
     case 2 where parts[0] == "events": return .events(parts[1])
     case 2 where parts[0] == "join": return .join(parts[1])

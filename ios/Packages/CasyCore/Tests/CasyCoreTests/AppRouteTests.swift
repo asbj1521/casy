@@ -16,3 +16,7 @@ import Testing
     #expect(appRoute("/privacy") == nil)
     #expect(appRoute("events") == nil)
 }
+
+@Test func theQrCodesAddressIsTheApp() {
+    #expect(appRoute("/app") == .home)
+}
