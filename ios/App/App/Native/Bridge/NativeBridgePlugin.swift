@@ -212,7 +212,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
                 self?.notifyListeners("openPage", data: ["path": path])
             }
             // After every plugin has loaded: the push plugin takes the taps as it loads.
-            PushWork.shared.takeTaps(from: self?.bridge)
+            PushWork.shared.takeTaps()
             // The home page's buttons open the app's own sheets (#202): the page isn't asked.
             HomeModel.shared.route = { [weak self] action, day in
                 self?.route(action, day) ?? false
@@ -272,7 +272,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             Task { @MainActor in
                 await SessionBox.shared.set(connection)
                 LivePulse.shared.signedIn(connection.userId)
-                PushWork.shared.takeTaps(from: self.bridge)
+                PushWork.shared.takeTaps()
                 PushWork.shared.signedIn(connection.userId)
                 if TestLaunch.seedPhone {
                     // Every run from an empty book: what a run before kept proves nothing.
@@ -364,7 +364,7 @@ public class NativeBridgePlugin: CAPPlugin, CAPBridgedPlugin,
             LabelsWork.shared.signedIn(next?.userId)
             CategorizeWork.shared.signedIn(next?.userId)
             LivePulse.shared.signedIn(next?.userId)
-            PushWork.shared.takeTaps(from: self.bridge)
+            PushWork.shared.takeTaps()
             PushWork.shared.signedIn(next?.userId)
         }
         // Someone else on this phone must never see the last person's choices.

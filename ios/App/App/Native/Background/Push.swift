@@ -1,7 +1,6 @@
 import CasyAPI
 import CasyCore
 import CasyUI
-import Capacitor
 import Foundation
 import UIKit
 import UserNotifications
@@ -13,10 +12,10 @@ import UserNotifications
 /// a notification shown while the app is open, and a tap opening the screen
 /// it is about.
 ///
-/// The tap comes through Capacitor's notification router, whose push handler
-/// this becomes (the push plugin's otherwise): the app opens its own screen
-/// for the address, waits for its home page when the tap launched it, and
-/// hands anything it can't show to the page.
+/// iOS hands it the taps (the notification centre's delegate, set as the app
+/// launches, so a tap that launched it isn't lost) and the token (AppDelegate
+/// posts it): the app opens its own screen for the address, waiting for its
+/// home page when the tap launched it.
 @MainActor
 final class PushWork: NSObject {
     static let shared = PushWork()
@@ -55,11 +54,14 @@ final class PushWork: NSObject {
         set { store.set(newValue, forKey: Self.tokenKey) }
     }
 
-    /// Takes the taps over from the push plugin; again whenever asked, since
-    /// the plugin sets itself as it loads.
-    func takeTaps(from bridge: CAPBridgeProtocol?) {
-        guard Self.on else { return }
-        bridge?.notificationRouter.pushNotificationHandler = self
+    /// Posted by AppDelegate with what iOS hands it: the token's bytes, or the error.
+    static let registered = Notification.Name("casy.push.registered")
+    static let failedToRegister = Notification.Name("casy.push.failedToRegister")
+
+    /// iOS's taps and the notifications shown while the app is open come here
+    /// (AppDelegate at launch; again once Capacitor's bridge, which takes it, has loaded).
+    func takeTaps() {
+        UNUserNotificationCenter.current().delegate = self
     }
 
     // MARK: Signing in and out
@@ -166,11 +168,11 @@ final class PushWork: NSObject {
         guard observers.isEmpty else { return }
         let center = NotificationCenter.default
         observers = [
-            center.addObserver(forName: .capacitorDidRegisterForRemoteNotifications, object: nil, queue: .main) { note in
+            center.addObserver(forName: Self.registered, object: nil, queue: .main) { note in
                 let hex = (note.object as? Data)?.map { String(format: "%02.2hhx", $0) }.joined()
                 MainActor.assumeIsolated { PushWork.shared.gotToken(hex) }
             },
-            center.addObserver(forName: .capacitorDidFailToRegisterForRemoteNotifications, object: nil, queue: .main) {
+            center.addObserver(forName: Self.failedToRegister, object: nil, queue: .main) {
                 _ in
                 MainActor.assumeIsolated { PushWork.shared.gotToken(nil) }
             },
@@ -223,14 +225,18 @@ final class PushWork: NSObject {
     }
 }
 
-extension PushWork: NotificationHandlerProtocol {
-    /// Shown while the app is open too, as the push plugin was set to (banner, sound, list).
-    nonisolated func willPresent(notification: UNNotification) -> UNNotificationPresentationOptions {
+extension PushWork: UNUserNotificationCenterDelegate {
+    /// Shown while the app is open too (banner, sound, list).
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter, willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
         [.banner, .sound, .list]
     }
 
-    nonisolated func didReceive(response: UNNotificationResponse) {
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse
+    ) async {
         guard let path = Self.path(of: response.notification.request.content) else { return }
-        Task { @MainActor in PushWork.shared.open(path) }
+        await MainActor.run { PushWork.shared.open(path) }
     }
 }

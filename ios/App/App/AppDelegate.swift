@@ -9,6 +9,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         // iOS needs the background refresh's handler before launch finishes.
         PhoneCalendarBackground.register()
+        // Before the first screen, so a notification's tap that launched the app reaches it (#202).
+        PushWork.shared.takeTaps()
         return true
     }
 
@@ -38,12 +40,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     // Capacitor's push plugin passes it on to the page.
     func application(_ application: UIApplication,
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
-        NotificationCenter.default.post(name: .capacitorDidRegisterForRemoteNotifications, object: deviceToken)
+        NotificationCenter.default.post(name: PushWork.registered, object: deviceToken)
     }
 
     func application(_ application: UIApplication,
                      didFailToRegisterForRemoteNotificationsWithError error: Error) {
-        NotificationCenter.default.post(name: .capacitorDidFailToRegisterForRemoteNotifications, object: error)
+        NotificationCenter.default.post(name: PushWork.failedToRegister, object: error)
     }
 
     func application(_ application: UIApplication,
