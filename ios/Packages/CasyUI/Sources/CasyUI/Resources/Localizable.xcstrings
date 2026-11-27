@@ -86,6 +86,23 @@
         }
       }
     },
+    "providers.ics.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "da": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sådan finder du dit link"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "How to find your link"
+          }
+        }
+      }
+    },
     "settings.title": {
       "extractionState": "manual",
       "localizations": {
@@ -11319,23 +11336,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Add a calendar"
-          }
-        }
-      }
-    },
-    "calendarAccounts.help": {
-      "extractionState": "manual",
-      "localizations": {
-        "da": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hjælp til at forbinde:"
-          }
-        },
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Help connecting:"
           }
         }
       }

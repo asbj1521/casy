@@ -247,13 +247,17 @@ final class CalendarsUITests: XCTestCase {
         XCTAssertTrue(text(app, containing: "Tilføjede \"Skema\"").waitForExistence(timeout: 10))
     }
 
-    /// The Apple Calendar guide is the app's own list (#202), its button opening the form.
+    /// The Apple Calendar guide is the app's own list (#202), opened from its
+    /// form and its button back to it.
     func testTheAppleGuide() {
         let app = launch("calendars:accounts", title: "Forbundne kalendere")
         let more = app.buttons["accounts.more"]
         XCTAssertTrue(more.waitForExistence(timeout: 10))
         more.tap()
-        app.links["Apple"].firstMatch.tap()
+        XCTAssertFalse(app.links["Kalenderlink"].exists)
+        app.buttons["accounts.add.apple"].tap()
+        shot("apple-form-page")
+        app.links.matching(NSPredicate(format: "identifier == %@", "/help/connect-icloud")).firstMatch.tap()
         XCTAssertTrue(app.descendants(matching: .any)["help.appleGuide"].waitForExistence(timeout: 5))
         XCTAssertTrue(text(app, containing: "Åbn Safari").exists)
         app.buttons["guide.copyAddress"].tap()
@@ -263,24 +267,19 @@ final class CalendarsUITests: XCTestCase {
         XCTAssertTrue(app.textFields["Apple-konto (e-mail)"].waitForExistence(timeout: 5))
     }
 
-    /// Finding a calendar's link is the app's own guide (#202).
+    /// Finding a calendar's link is the app's own guide (#202), opened from the link form.
     func testTheLinkGuide() {
         let app = launch("calendars:accounts", title: "Forbundne kalendere")
         let more = app.buttons["accounts.more"]
         XCTAssertTrue(more.waitForExistence(timeout: 10))
         more.tap()
-        // The footnote's second link answers with no size: tapped just after the first.
-        let apple = app.links["Apple"].firstMatch
-        XCTAssertTrue(apple.waitForExistence(timeout: 5))
-        apple.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5)).withOffset(CGVector(dx: 40, dy: 0)).tap()
+        app.buttons["accounts.add.ics"].tap()
+        let link = app.links["Sådan finder du dit link"]
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+        link.tap()
         XCTAssertTrue(app.descendants(matching: .any)["help.linkGuide"].waitForExistence(timeout: 5))
         XCTAssertTrue(text(app, containing: "Hemmelig adresse i iCal-format").exists)
         shot("guide-link")
-        app.swipeUp()
-        shot("guide-link-drawings")
-        app.swipeUp()
-        app.swipeUp()
-        shot("guide-link-end")
     }
 
     /// An ordinary password is warned about and refused; an app-specific one connects.

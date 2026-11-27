@@ -1060,7 +1060,6 @@ public enum CasyStrings {
     public static var accountsTitle: String { text("profile.connectedCalendars") }
     public static var accountsYours: String { text("calendarAccounts.accounts") }
     public static var accountsAdd: String { text("calendarAccounts.add") }
-    public static var accountsHelp: String { text("calendarAccounts.help") }
     public static var accountsMore: String { text("calendarAccounts.more") }
     public static var accountsMoreDetail: String { text("calendarAccounts.moreDetail") }
     public static var accountsAppleElsewhere: String { text("calendarAccounts.appleElsewhere") }
@@ -1136,6 +1135,8 @@ public enum CasyStrings {
     public static var appleAboutBody: String { text("appleForm.aboutBody") }
     public static var appleReading: String { text("appleForm.reading") }
     public static var appleStepByStep: String { text("appleForm.stepByStep") }
+    /// The link form's way to its guide.
+    public static var linkFindIt: String { text("providers.ics.help") }
     public static func appleNoPasswordYet(_ link: String) -> String { format("appleForm.noPasswordYet", link) }
     public static func appleStuck(_ link: String) -> String { format("appleForm.stuck", link) }
     public static func appleLooksWrong(_ example: String) -> String { format("appleForm.looksWrong", example) }

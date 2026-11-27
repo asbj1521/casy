@@ -89,13 +89,6 @@ struct ConnectedCalendarsScreen: View {
         .accessibilityIdentifier("accounts.screen")
         .casyPushedBar(CasyStrings.accountsTitle, close: CasyStrings.done, action: closeSheet)
         .pageLinks(leave: leave)
-        // The Apple guide's "I have the password": its form, once the guide has gone.
-        .environment(\.appleGuideNext) {
-            Task {
-                try? await Task.sleep(for: .milliseconds(450))
-                form = .apple
-            }
-        }
         // Kalendere has just fetched the list: only the accounts may have moved on.
         .task { if model.data == nil { await model.load() } else { await model.loadAccounts() } }
         .refreshable { await model.load() }
@@ -121,7 +114,7 @@ struct ConnectedCalendarsScreen: View {
                         form = nil
                     }
                 case .link:
-                    LinkFormSheet { added in
+                    LinkFormSheet(leave: leave) { added in
                         linkAdded = added
                         form = nil
                     }
@@ -283,17 +276,10 @@ struct ConnectedCalendarsScreen: View {
 
     /// The web's AddCalendar on a phone: Tilføj en kalender (this phone),
     /// Andre måder at forbinde folding the Apple account and the link open
-    /// under it (its chevron turning down), the guides as the footnote.
+    /// under it (its chevron turning down). The guides are in their forms, the
+    /// one place each opens from (#202).
     private var addSection: some View {
-        CardList(
-            main.isEmpty ? nil : CasyStrings.accountsAdd,
-            footnoteText: showMore
-                ? Text(
-                    HelpPages.text(
-                        "\(CasyStrings.accountsHelp) [\(CasyStrings.calendarsAppleName)](/help/connect-icloud), [\(CasyStrings.calendarsLinkName)](/help/connect-ics)",
-                        size: 12))
-                : nil
-        ) {
+        CardList(main.isEmpty ? nil : CasyStrings.accountsAdd) {
             ForEach(main, id: \.self, content: providerRow)
             Button {
                 withAnimation(.easeOut(duration: 0.2)) { moreOpen = !showMore }
@@ -690,8 +676,8 @@ private struct AppleFormSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
                     CasyField(CasyStrings.appleEmail, text: $email, placeholder: "you@icloud.com")
                         .keyboardType(.emailAddress)
                         .textContentType(.username)
@@ -704,40 +690,25 @@ private struct AppleFormSheet: View {
                             if after.count - before.count > 1 { checkShape = true }
                         }
                         .accessibilityIdentifier("apple.password")
-                    Text(HelpPages.text(CasyStrings.appleNoPasswordYet(guide)))
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .padding(.horizontal, 4)
+                    FormFootnote(HelpPages.text(CasyStrings.appleNoPasswordYet(guide), size: 12))
                     if shapeLooksWrong {
                         Notice(CasyStrings.appleLooksWrong(appPasswordExample), tone: .warning)
                     }
                     if let failure {
                         VStack(alignment: .leading, spacing: 4) {
                             Notice(failure, tone: .error, bare: true)
-                            Text(HelpPages.text(CasyStrings.appleStuck(guide)))
-                                .font(.footnote)
-                                .foregroundStyle(Theme.mutedForeground.color)
+                            FormFootnote(HelpPages.text(CasyStrings.appleStuck(guide), size: 12))
                         }
-                        .padding(.horizontal, 4)
                     }
+                    AboutFold(title: CasyStrings.appleAbout, text: CasyStrings.appleAboutBody, open: $about)
+                        .padding(.top, 12)
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                .listRowSeparator(.hidden)
-                Section {
-                    Button {
-                        about.toggle()
-                    } label: {
-                        Label(CasyStrings.appleAbout, systemImage: "lock")
-                            .font(.subheadline)
-                    }
-                    if about {
-                        Text(CasyStrings.appleAboutBody)
-                            .font(.footnote)
-                            .foregroundStyle(Theme.mutedForeground.color)
-                    }
-                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
+            .background(Theme.background.color)
+            .tint(Theme.foreground.color)
             .casySheetBar(CasyStrings.provider("apple"), close: CasyStrings.cancel, disabled: submitting) { dismiss() }
             .pageLinks(leave: leave)
             // Opened from this form, the guide's button is the way back to it.
@@ -774,6 +745,7 @@ private struct AppleFormSheet: View {
 
 /// A calendar by its link (a timetable, a shared feed), and a name for it.
 private struct LinkFormSheet: View {
+    let leave: (LeavingProfile) -> Void
     let added: (LinkAdded) -> Void
 
     private let model = CalendarsModel.shared
@@ -786,42 +758,32 @@ private struct LinkFormSheet: View {
 
     var body: some View {
         NavigationStack {
-            List {
-                Section {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
                     CasyField(CasyStrings.linkLabel, text: $url, placeholder: "https://... or webcal://...")
                         .keyboardType(.URL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .accessibilityIdentifier("link.url")
-                    Text(CasyStrings.linkLikePassword)
-                        .font(.footnote)
-                        .foregroundStyle(Theme.mutedForeground.color)
-                        .padding(.horizontal, 4)
+                    FormFootnote(
+                        HelpPages.text("\(CasyStrings.linkLikePassword) [\(CasyStrings.linkFindIt)](/help/connect-ics)", size: 12))
                     CasyField(CasyStrings.linkName, text: $name, placeholder: CasyStrings.linkNamePlaceholder)
                         .onChange(of: name) { _, typed in
                             if typed.count > 80 { name = String(typed.prefix(80)) }
                         }
                         .accessibilityIdentifier("link.name")
                     if let failure { Notice(failure, tone: .error, bare: true) }
+                    AboutFold(title: CasyStrings.linkAbout, text: CasyStrings.linkAboutBody, open: $about)
+                        .padding(.top, 12)
                 }
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 6, leading: 0, bottom: 6, trailing: 0))
-                .listRowSeparator(.hidden)
-                Section {
-                    Button {
-                        about.toggle()
-                    } label: {
-                        Label(CasyStrings.linkAbout, systemImage: "lock")
-                            .font(.subheadline)
-                    }
-                    if about {
-                        Text(CasyStrings.linkAboutBody)
-                            .font(.footnote)
-                            .foregroundStyle(Theme.mutedForeground.color)
-                    }
-                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
             }
+            .background(Theme.background.color)
+            .tint(Theme.foreground.color)
             .casySheetBar(CasyStrings.provider("ics"), close: CasyStrings.cancel, disabled: submitting) { dismiss() }
+            .pageLinks(leave: leave)
             .safeAreaInset(edge: .bottom) {
                 FlowButton(busy: submitting, action: submit) {
                     Text(submitting ? CasyStrings.linkReading : CasyStrings.addLink)
@@ -847,6 +809,52 @@ private struct LinkFormSheet: View {
                 failure = error.localizedDescription
             }
         }
+    }
+}
+
+/// A form's footnote: 12 muted, its link underlined in the text's colour.
+private struct FormFootnote: View {
+    let text: AttributedString
+    init(_ text: AttributedString) { self.text = text }
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.mutedForeground.color)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.horizontal, 4)
+    }
+}
+
+/// What we do with what's typed here, folded behind a lock.
+private struct AboutFold: View {
+    let title: String
+    let text: String
+    @Binding var open: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(.easeOut(duration: 0.2)) { open.toggle() }
+            } label: {
+                HStack(spacing: 6) {
+                    LucideIcon("lock", size: 14)
+                    Text(title).font(.system(size: 14, weight: .medium))
+                    LucideIcon("chevron-down", size: 14)
+                        .rotationEffect(.degrees(open ? 180 : 0))
+                }
+                .foregroundStyle(Theme.mutedForeground.color)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            if open {
+                Text(text)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.mutedForeground.color)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(.horizontal, 4)
     }
 }
 

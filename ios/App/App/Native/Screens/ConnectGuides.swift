@@ -2,9 +2,8 @@ import CasyCore
 import CasyUI
 import SwiftUI
 
-/// What the Apple Calendar guide's "I have the password" does where it was
-/// opened from: back to the Apple form (in the form's own stack), or the form
-/// opened (from Forbundne kalendere). Elsewhere the guide has no such button.
+/// What the Apple Calendar guide's "I have the password" does: opened from
+/// the Apple form, back to it. Elsewhere (Hjælp og kontakt) it has none.
 extension EnvironmentValues {
     @Entry var appleGuideNext: (() -> Void)?
 }
